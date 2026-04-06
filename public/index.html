@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FrogGame AI | X Layer Chain Game</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Roboto:wght@400;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Roboto', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; display: flex; flex-direction: column; }
+    .font-mono { font-family: 'Roboto Mono', monospace; }
+
+    /* Header */
+    header { background: #1e293b; border-bottom: 1px solid #334155; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 1.25rem; font-weight: bold; background: linear-gradient(to right, #22d3ee, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    header .subtitle { font-size: 0.7rem; color: #64748b; }
+    #wallet-section { display: none; text-align: right; }
+    #wallet-section.visible { display: block; }
+    #balance-display { font-size: 1.1rem; color: #facc15; font-weight: bold; }
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+    .btn-primary { background: linear-gradient(to right, #2563eb, #7c3aed); color: white; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-sm { padding: 4px 10px; font-size: 0.75rem; border-radius: 4px; }
+    .btn-green { background: #16a34a; color: white; }
+    .btn-red { background: #dc2626; color: white; }
+
+    /* Main game area */
+    main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; }
+    .game-info { display: flex; justify-content: space-between; width: 100%; max-width: 800px; margin-bottom: 20px; }
+    #round-display { font-size: 1.5rem; color: #22d3ee; font-weight: bold; }
+    #timer-display { font-size: 3rem; color: #ef4444; font-weight: 900; text-shadow: 0 0 10px rgba(239,68,68,0.5); }
+    #status-text { font-size: 1rem; color: #94a3b8; text-align: center; margin: 10px 0; }
+
+    /* Food grid */
+    #food-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 600px; margin: 20px 0; }
+    .food-card { background: #1e293b; border: 2px solid #334155; border-radius: 10px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+    .food-card:hover { border-color: #6366f1; transform: translateY(-2px); }
+    .food-card.selected { border-color: #f472b6; box-shadow: 0 0 15px rgba(244,114,182,0.4); transform: scale(1.05); }
+    .food-card.eaten { filter: grayscale(100%); opacity: 0.5; }
+    .food-card.winner { border-color: #22c55e; box-shadow: 0 0 20px rgba(34,197,94,0.4); }
+    .food-emoji { font-size: 2rem; }
+    .food-name { font-size: 0.7rem; color: #94a3b8; margin-top: 4px; }
+    .food-bet { font-size: 0.75rem; color: #facc15; margin-top: 4px; font-weight: bold; }
+
+    /* Footer controls */
+    footer { background: #1e293b; border-top: 1px solid #334155; padding: 12px 20px; }
+    .controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; max-width: 800px; margin: 0 auto; }
+    .bet-btn { padding: 8px 14px; background: #334155; border: 1px solid #475569; color: #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+    .bet-btn:hover { background: #475569; }
+    .bet-btn.active { background: #6366f1; border-color: #818cf8; }
+    #custom-bet { width: 80px; background: #0f172a; border: 1px solid #475569; border-radius: 6px; padding: 8px; color: white; text-align: center; font-size: 0.85rem; }
+    #feed-btn { padding: 10px 24px; background: linear-gradient(to right, #ec4899, #8b5cf6); color: white; border: none; border-radius: 20px; font-weight: bold; font-size: 1rem; cursor: pointer; }
+    #feed-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Toast */
+    #toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; }
+    .toast { background: rgba(30,41,59,0.95); border-left: 4px solid #22d3ee; padding: 10px 16px; border-radius: 4px; margin-bottom: 8px; color: #e2e8f0; font-size: 0.85rem; animation: slideIn 0.3s ease; }
+    .toast.error { border-left-color: #ef4444; }
+    .toast.success { border-left-color: #22c55e; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    @media (max-width: 768px) {
+        #food-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .food-card { padding: 10px; }
+        .food-emoji { font-size: 1.5rem; }
+        #timer-display { font-size: 2rem; }
+    }
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<header>
+    <div>
+        <h1>🐸 FrogGame AI</h1>
+        <div class="subtitle">X Layer • AI-Powered Strategy</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+        <div id="wallet-section">
+            <div style="font-size:0.7rem;color:#64748b;">Balance (OEOE)</div>
+            <div id="balance-display" class="font-mono">0</div>
+            <div style="margin-top:4px;display:flex;gap:4px;">
+                <button class="btn btn-sm btn-green" id="deposit-btn">Deposit</button>
+                <button class="btn btn-sm btn-green" id="withdraw-btn">Withdraw</button>
+                <button class="btn btn-sm btn-red" id="disconnect-btn">Disconnect</button>
+            </div>
+        </div>
+        <button class="btn btn-primary" id="connect-btn"><i class="fa-solid fa-wallet"></i> Connect Wallet</button>
+    </div>
+</header>
+
+<main>
+    <div class="game-info">
+        <div id="round-display" class="font-mono">#0</div>
+        <div id="timer-display" class="font-mono">-</div>
+    </div>
+    <div id="status-text">Connect wallet to start playing</div>
+    <div id="food-grid"></div>
+</main>
+
+<footer>
+    <div class="controls">
+        <button class="bet-btn" data-amount="10000">10K</button>
+        <button class="bet-btn" data-amount="100000">100K</button>
+        <button class="bet-btn" data-amount="1000000">1M</button>
+        <input type="text" id="custom-bet" placeholder="Custom" inputmode="numeric" />
+        <button id="feed-btn" disabled><i class="fa-solid fa-hand-holding-dollar"></i> Feed</button>
+    </div>
+</footer>
+
+<!-- AI Panel (loaded from ai-panel.js) -->
+<script src="ai-panel.js"></script>
+
+<script>
+    // ==================== Game Configuration ====================
+    const SERVER_URL = window.location.origin;
+    const FOODS = [
+        { name: 'Apple', emoji: '🍎' },
+        { name: 'Banana', emoji: '🍌' },
+        { name: 'Cherry', emoji: '🍒' },
+        { name: 'Grape', emoji: '🍇' },
+        { name: 'Watermelon', emoji: '🍉' },
+        { name: 'Peach', emoji: '🍑' },
+        { name: 'Strawberry', emoji: '🍓' },
+        { name: 'Orange', emoji: '🍊' }
+    ];
+
+    const STATE = {
+        walletConnected: false,
+        userAddress: null,
+        sessionToken: null,
+        balance: 0,
+        selectedFood: null,
+        betAmount: 10000,
+        roundId: 0,
+        phase: 'IDLE',
+        timeLeft: 0,
+        foodBets: [0,0,0,0,0,0,0,0],
+        ws: null,
+        config: null
+    };
+
+    // Expose for AI panel
+    window.connectedAddress = null;
+
+    // ==================== Utility ====================
+    function formatNumber(n) { return Math.floor(n).toLocaleString(); }
+
+    function showToast(msg, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = msg;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    // ==================== Food Grid ====================
+    function renderFoodGrid() {
+        const grid = document.getElementById('food-grid');
+        grid.innerHTML = '';
+        FOODS.forEach((food, i) => {
+            const card = document.createElement('div');
+            card.className = 'food-card';
+            card.dataset.index = i;
+            if (STATE.selectedFood === i) card.classList.add('selected');
+            card.innerHTML = `
+                <div class="food-emoji">${food.emoji}</div>
+                <div class="food-name">${food.name}</div>
+                <div class="food-bet">${formatNumber(STATE.foodBets[i])}</div>
+            `;
+            card.addEventListener('click', () => selectFood(i));
+            grid.appendChild(card);
+        });
+    }
+
+    function selectFood(index) {
+        if (STATE.phase !== 'BETTING') return;
+        STATE.selectedFood = index;
+        renderFoodGrid();
+        updateFeedButton();
+    }
+
+    function updateFeedButton() {
+        const btn = document.getElementById('feed-btn');
+        btn.disabled = !STATE.walletConnected || STATE.phase !== 'BETTING' || STATE.selectedFood === null || STATE.betAmount <= 0;
+    }
+
+    // ==================== Wallet Connection ====================
+    async function connectWallet() {
+        if (!window.ethereum) { showToast('Please install MetaMask', 'error'); return; }
+        try {
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            STATE.userAddress = accounts[0];
+            STATE.walletConnected = true;
+            window.connectedAddress = STATE.userAddress;
+
+            // Login to server
+            const res = await fetch(`${SERVER_URL}/api/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ player: STATE.userAddress })
+            });
+            const data = await res.json();
+            if (data.success) {
+                STATE.sessionToken = data.token;
+                STATE.balance = data.balance || 0;
+            }
+
+            document.getElementById('wallet-section').classList.add('visible');
+            document.getElementById('connect-btn').style.display = 'none';
+            document.getElementById('balance-display').textContent = formatNumber(STATE.balance);
+            showToast('Wallet connected!', 'success');
+            updateFeedButton();
+            connectWebSocket();
+        } catch (err) {
+            showToast('Failed to connect: ' + err.message, 'error');
+        }
+    }
+
+    function disconnectWallet() {
+        STATE.walletConnected = false;
+        STATE.userAddress = null;
+        STATE.sessionToken = null;
+        window.connectedAddress = null;
+        document.getElementById('wallet-section').classList.remove('visible');
+        document.getElementById('connect-btn').style.display = '';
+        if (STATE.ws) STATE.ws.close();
+    }
+
+    // ==================== WebSocket ====================
+    function connectWebSocket() {
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        STATE.ws = new WebSocket(`${protocol}//${location.host}`);
+
+        STATE.ws.onopen = () => {
+            if (STATE.userAddress && STATE.sessionToken) {
+                STATE.ws.send(JSON.stringify({ type: 'login', address: STATE.userAddress, token: STATE.sessionToken }));
+            }
+        };
+
+        STATE.ws.onmessage = (event) => {
+            try {
+                const { type, data } = JSON.parse(event.data);
+                if (type === 'round-started') {
+                    STATE.roundId = data.roundId;
+                    STATE.phase = 'BETTING';
+                    STATE.timeLeft = data.endTime - Math.floor(Date.now() / 1000);
+                    STATE.foodBets = [0,0,0,0,0,0,0,0];
+                    STATE.selectedFood = null;
+                    document.getElementById('status-text').textContent = 'Select a food and place your bet!';
+                    renderFoodGrid();
+                    updateFeedButton();
+                }
+                if (type === 'bets-updated' && data.foodBets) {
+                    STATE.foodBets = data.foodBets;
+                    renderFoodGrid();
+                }
+                if (type === 'round-settled') {
+                    STATE.phase = 'SETTLING';
+                    handleSettlement(data);
+                }
+                if (type === 'balance-updated' && data.player === STATE.userAddress?.toLowerCase()) {
+                    STATE.balance = data.balance;
+                    document.getElementById('balance-display').textContent = formatNumber(STATE.balance);
+                }
+            } catch (e) {}
+        };
+
+        STATE.ws.onclose = () => { setTimeout(connectWebSocket, 3000); };
+    }
+
+    function handleSettlement(data) {
+        const { winningFood, isNoContest, playerResults } = data;
+        document.getElementById('status-text').textContent = isNoContest
+            ? `No contest — all bets returned. Frog ate ${FOODS[winningFood]?.emoji || '?'}`
+            : `Frog ate ${FOODS[winningFood]?.emoji || '?'}!`;
+
+        // Highlight cards
+        document.querySelectorAll('.food-card').forEach(card => {
+            const idx = parseInt(card.dataset.index);
+            card.classList.remove('selected');
+            if (idx === winningFood) card.classList.add('eaten');
+            else card.classList.add('winner');
+        });
+
+        // Show player result
+        if (playerResults && STATE.userAddress) {
+            const result = playerResults[STATE.userAddress.toLowerCase()];
+            if (result) {
+                if (result.result === 'win') showToast(`🎉 You won ${formatNumber(result.changeAmount)} OEOE!`, 'success');
+                else showToast(`😢 You lost ${formatNumber(Math.abs(result.changeAmount))} OEOE`, 'error');
+            }
+        }
+        updateFeedButton();
+    }
+
+    // ==================== Betting ====================
+    async function placeBet() {
+        if (!STATE.walletConnected || STATE.selectedFood === null || STATE.betAmount <= 0) return;
+        const btn = document.getElementById('feed-btn');
+        btn.disabled = true;
+        try {
+            const res = await fetch(`${SERVER_URL}/api/bet`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ player: STATE.userAddress, foodIndex: STATE.selectedFood, amount: STATE.betAmount, nonce: Date.now() })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`Bet ${formatNumber(STATE.betAmount)} on ${FOODS[STATE.selectedFood].emoji}`, 'success');
+            } else {
+                showToast(data.error || 'Bet failed', 'error');
+            }
+        } catch (err) {
+            showToast('Bet failed: ' + err.message, 'error');
+        }
+        updateFeedButton();
+    }
+
+    // ==================== Timer ====================
+    function updateTimer() {
+        const now = Math.floor(Date.now() / 1000);
+        if (STATE.phase === 'BETTING' && STATE.roundId > 0) {
+            // Calculate from game state
+        }
+        const display = document.getElementById('timer-display');
+        const roundDisplay = document.getElementById('round-display');
+        roundDisplay.textContent = `#${STATE.roundId}`;
+
+        if (STATE.timeLeft > 0) {
+            display.textContent = STATE.timeLeft;
+            display.style.color = STATE.timeLeft <= 5 ? '#ef4444' : STATE.timeLeft <= 15 ? '#f59e0b' : '#22d3ee';
+        } else {
+            display.textContent = STATE.phase === 'SETTLING' ? '🐸' : '-';
+        }
+    }
+
+    // ==================== Init ====================
+    async function init() {
+        renderFoodGrid();
+
+        // Bet buttons
+        document.querySelectorAll('.bet-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                STATE.betAmount = parseInt(btn.dataset.amount);
+                document.getElementById('custom-bet').value = '';
+                updateFeedButton();
+            });
+        });
+
+        document.getElementById('custom-bet').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            if (!isNaN(val) && val > 0) {
+                STATE.betAmount = val;
+                document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
+            }
+            updateFeedButton();
+        });
+
+        document.getElementById('feed-btn').addEventListener('click', placeBet);
+        document.getElementById('connect-btn').addEventListener('click', connectWallet);
+        document.getElementById('disconnect-btn').addEventListener('click', disconnectWallet);
+
+        // Load game state
+        try {
+            const res = await fetch(`${SERVER_URL}/api/game-state`);
+            const gs = await res.json();
+            STATE.roundId = gs.roundId;
+            STATE.phase = gs.phase || gs.state;
+            STATE.timeLeft = gs.timeLeft;
+            updateTimer();
+        } catch (e) {}
+
+        // Load bets
+        try {
+            const res = await fetch(`${SERVER_URL}/api/round-bets`);
+            const data = await res.json();
+            STATE.foodBets = data.foodBets || [0,0,0,0,0,0,0,0];
+            renderFoodGrid();
+        } catch (e) {}
+
+        // Timer update
+        setInterval(() => {
+            if (STATE.timeLeft > 0) STATE.timeLeft--;
+            updateTimer();
+        }, 1000);
+
+        // Periodic game state sync
+        setInterval(async () => {
+            try {
+                const res = await fetch(`${SERVER_URL}/api/game-state`);
+                const gs = await res.json();
+                STATE.roundId = gs.roundId;
+                STATE.phase = gs.phase || gs.state;
+                STATE.timeLeft = gs.timeLeft;
+            } catch (e) {}
+        }, 5000);
+
+        // Periodic balance sync
+        setInterval(async () => {
+            if (STATE.walletConnected && STATE.userAddress) {
+                try {
+                    const res = await fetch(`${SERVER_URL}/api/player-balance/${STATE.userAddress}`);
+                    const data = await res.json();
+                    if (data.balance != null) {
+                        STATE.balance = Math.floor(parseFloat(ethers.formatUnits(BigInt(data.balance), 9)));
+                        document.getElementById('balance-display').textContent = formatNumber(STATE.balance);
+                    }
+                } catch (e) {}
+            }
+        }, 15000);
+    }
+
+    init();
+</script>
+</body>
+</html>

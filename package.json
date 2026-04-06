@@ -1,0 +1,20 @@
+{
+  "name": "froggame-ai",
+  "version": "1.0.0",
+  "description": "FrogGame AI Agent - AI-powered strategy analysis for the FrogGame on-chain betting game on X Layer",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "keywords": ["blockchain", "ai", "xlayer", "onchain-game", "defi"],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "ws": "^8.16.0",
+    "ethers": "^6.9.0",
+    "dotenv": "^16.3.1",
+    "node-fetch": "^2.7.0"
+  }
+}
