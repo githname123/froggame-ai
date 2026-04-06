@@ -24,31 +24,31 @@ const AI_PANEL = (() => {
             </div>
             <div id="ai-panel-content" class="ai-hidden">
                 <div id="ai-panel-header">
-                    <span>🤖 AI Strategy Advisor</span>
+                    <span>🤖 AI 策略顾问</span>
                     <button id="ai-panel-close">✕</button>
                 </div>
                 <div id="ai-tabs">
-                    <button class="ai-tab active" data-tab="strategy">📊 Strategy</button>
-                    <button class="ai-tab" data-tab="history">📈 History</button>
-                    <button class="ai-tab" data-tab="chat">💬 Chat</button>
+                    <button class="ai-tab active" data-tab="strategy">📊 策略</button>
+                    <button class="ai-tab" data-tab="history">📈 历史</button>
+                    <button class="ai-tab" data-tab="chat">💬 对话</button>
                 </div>
                 <div id="ai-tab-content">
                     <!-- Strategy Tab -->
                     <div id="ai-tab-strategy" class="ai-tab-pane active">
-                        <div id="ai-strategy-loading" class="ai-loading">Analyzing...</div>
+                        <div id="ai-strategy-loading" class="ai-loading">分析中...</div>
                         <div id="ai-strategy-content"></div>
                     </div>
                     <!-- History Tab -->
                     <div id="ai-tab-history" class="ai-tab-pane">
-                        <div id="ai-history-loading" class="ai-loading">Loading history...</div>
+                        <div id="ai-history-loading" class="ai-loading">加载历史...</div>
                         <div id="ai-history-content"></div>
                     </div>
                     <!-- Chat Tab -->
                     <div id="ai-tab-chat" class="ai-tab-pane">
                         <div id="ai-chat-messages"></div>
                         <div id="ai-chat-input-area">
-                            <input type="text" id="ai-chat-input" placeholder="Ask me anything... (e.g. 'analyze', '帮我分析')" />
-                            <button id="ai-chat-send">Send</button>
+                            <input type="text" id="ai-chat-input" placeholder="随便问我... (例如 '帮我分析', '当前局势')" />
+                            <button id="ai-chat-send">发送</button>
                         </div>
                     </div>
                 </div>
@@ -117,7 +117,7 @@ const AI_PANEL = (() => {
             loading.style.display = 'none';
             content.innerHTML = renderStrategy(data);
         } catch (err) {
-            loading.textContent = 'Failed to load strategy';
+            loading.textContent = '策略加载失败';
         }
     }
 
@@ -125,11 +125,11 @@ const AI_PANEL = (() => {
         const { roundId, phase, totalPool, foodStats, foodEV, recommendations, unbettedFoods } = data;
 
         let html = `<div class="ai-section">
-            <div class="ai-round-info">Round #${roundId} | ${phase} | Pool: ${Math.floor(totalPool).toLocaleString()} OEOE</div>
+            <div class="ai-round-info">第 ${roundId} 轮 | ${phase} | 奖池: ${Math.floor(totalPool).toLocaleString()} OEOE</div>
         </div>`;
 
         // Betting distribution bars
-        html += `<div class="ai-section"><div class="ai-section-title">Betting Distribution</div>`;
+        html += `<div class="ai-section"><div class="ai-section-title">投注分布</div>`;
         const maxBet = Math.max(...foodStats.map(f => f.totalBet), 1);
         for (const food of foodStats) {
             const pct = (food.totalBet / maxBet * 100).toFixed(0);
@@ -148,7 +148,7 @@ const AI_PANEL = (() => {
 
         // Recommendations
         if (recommendations.length > 0) {
-            html += `<div class="ai-section"><div class="ai-section-title">AI Recommendations</div>`;
+            html += `<div class="ai-section"><div class="ai-section-title">AI 推荐</div>`;
             for (const rec of recommendations) {
                 const icon = rec.type === 'opportunity' ? '🎯' : rec.type === 'warning' ? '⚠️' : rec.type === 'risk' ? '🔴' : '💡';
                 html += `<div class="ai-rec ai-rec-${rec.type}">${icon} ${rec.message}</div>`;
@@ -158,7 +158,7 @@ const AI_PANEL = (() => {
 
         // Unbetted foods
         if (unbettedFoods && unbettedFoods.length > 0) {
-            html += `<div class="ai-highlight">🎯 Unbetted: ${unbettedFoods.map(f => f.emoji).join(' ')} — Max reward potential!</div>`;
+            html += `<div class="ai-highlight">🎯 无人投注: ${unbettedFoods.map(f => f.emoji).join(' ')} — 最大收益潜力！</div>`;
         }
 
         return html;
@@ -174,7 +174,7 @@ const AI_PANEL = (() => {
             loading.style.display = 'none';
             content.innerHTML = renderHistory(data);
         } catch (err) {
-            loading.textContent = 'Failed to load history';
+            loading.textContent = '历史加载失败';
         }
     }
 
@@ -182,17 +182,17 @@ const AI_PANEL = (() => {
         const { totalRounds, contestedRounds, foodAnalysis, recentEatenSequence, disclaimer } = data;
 
         let html = `<div class="ai-section">
-            <div class="ai-round-info">Total: ${totalRounds} rounds | Contested: ${contestedRounds}</div>
+            <div class="ai-round-info">总计: ${totalRounds} 轮 | 有效竞争: ${contestedRounds} 轮</div>
         </div>`;
 
         // Recent sequence
         if (recentEatenSequence && recentEatenSequence.length > 0) {
-            html += `<div class="ai-section"><div class="ai-section-title">Recent Eaten (newest→oldest)</div>
+            html += `<div class="ai-section"><div class="ai-section-title">最近被吃 (新→旧)</div>
                 <div class="ai-sequence">${recentEatenSequence.join(' ')}</div></div>`;
         }
 
         // Food frequency chart
-        html += `<div class="ai-section"><div class="ai-section-title">Food Eaten Frequency</div>`;
+        html += `<div class="ai-section"><div class="ai-section-title">食物被吃频率</div>`;
         const maxCount = Math.max(...foodAnalysis.map(f => f.eatenCount), 1);
         for (const food of foodAnalysis) {
             const pct = (food.eatenCount / maxCount * 100).toFixed(0);
@@ -242,7 +242,7 @@ const AI_PANEL = (() => {
                 }
             }
         } catch (err) {
-            appendChatMessage('ai', '❌ Failed to get response. Please try again.');
+            appendChatMessage('ai', '❌ 获取回复失败，请重试。');
         }
     }
 
@@ -263,7 +263,7 @@ const AI_PANEL = (() => {
         injectStyles();
         // Add welcome message
         setTimeout(() => {
-            appendChatMessage('ai', '🐸 Welcome to FrogGame AI! I can help you analyze bets, check history, and suggest strategies.\n\nType "help" to see what I can do, or try "analyze" for the current round.');
+            appendChatMessage('ai', '🐸 欢迎使用 FrogGame AI！我可以帮你分析投注、查看历史和推荐策略。\n\n输入"帮助"查看功能，或输入"分析"获取当前局势分析。');
         }, 500);
     }
 

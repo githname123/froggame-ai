@@ -76,19 +76,19 @@
 <header>
     <div>
         <h1>🐸 FrogGame AI</h1>
-        <div class="subtitle">X Layer • AI-Powered Strategy</div>
+        <div class="subtitle">X Layer • AI 策略引擎</div>
     </div>
     <div style="display:flex;align-items:center;gap:12px;">
         <div id="wallet-section">
-            <div style="font-size:0.7rem;color:#64748b;">Balance (OEOE)</div>
+            <div style="font-size:0.7rem;color:#64748b;">余额 (OEOE)</div>
             <div id="balance-display" class="font-mono">0</div>
             <div style="margin-top:4px;display:flex;gap:4px;">
-                <button class="btn btn-sm btn-green" id="deposit-btn">Deposit</button>
-                <button class="btn btn-sm btn-green" id="withdraw-btn">Withdraw</button>
-                <button class="btn btn-sm btn-red" id="disconnect-btn">Disconnect</button>
+                <button class="btn btn-sm btn-green" id="deposit-btn">存入</button>
+                <button class="btn btn-sm btn-green" id="withdraw-btn">提取</button>
+                <button class="btn btn-sm btn-red" id="disconnect-btn">断开</button>
             </div>
         </div>
-        <button class="btn btn-primary" id="connect-btn"><i class="fa-solid fa-wallet"></i> Connect Wallet</button>
+        <button class="btn btn-primary" id="connect-btn"><i class="fa-solid fa-wallet"></i> 连接钱包</button>
     </div>
 </header>
 
@@ -97,7 +97,7 @@
         <div id="round-display" class="font-mono">#0</div>
         <div id="timer-display" class="font-mono">-</div>
     </div>
-    <div id="status-text">Connect wallet to start playing</div>
+    <div id="status-text">连接钱包开始游戏</div>
     <div id="food-grid"></div>
 </main>
 
@@ -106,8 +106,8 @@
         <button class="bet-btn" data-amount="10000">10K</button>
         <button class="bet-btn" data-amount="100000">100K</button>
         <button class="bet-btn" data-amount="1000000">1M</button>
-        <input type="text" id="custom-bet" placeholder="Custom" inputmode="numeric" />
-        <button id="feed-btn" disabled><i class="fa-solid fa-hand-holding-dollar"></i> Feed</button>
+        <input type="text" id="custom-bet" placeholder="自定义" inputmode="numeric" />
+        <button id="feed-btn" disabled><i class="fa-solid fa-hand-holding-dollar"></i> 投喂</button>
     </div>
 </footer>
 
@@ -118,14 +118,14 @@
     // ==================== Game Configuration ====================
     const SERVER_URL = window.location.origin;
     const FOODS = [
-        { name: 'Apple', emoji: '🍎' },
-        { name: 'Banana', emoji: '🍌' },
-        { name: 'Cherry', emoji: '🍒' },
-        { name: 'Grape', emoji: '🍇' },
-        { name: 'Watermelon', emoji: '🍉' },
-        { name: 'Peach', emoji: '🍑' },
-        { name: 'Strawberry', emoji: '🍓' },
-        { name: 'Orange', emoji: '🍊' }
+        { name: '苹果', emoji: '🍎' },
+        { name: '香蕉', emoji: '🍌' },
+        { name: '樱桃', emoji: '🍒' },
+        { name: '葡萄', emoji: '🍇' },
+        { name: '西瓜', emoji: '🍉' },
+        { name: '桃子', emoji: '🍑' },
+        { name: '草莓', emoji: '🍓' },
+        { name: '橙子', emoji: '🍊' }
     ];
 
     const STATE = {
@@ -191,7 +191,7 @@
 
     // ==================== Wallet Connection ====================
     async function connectWallet() {
-        if (!window.ethereum) { showToast('Please install MetaMask', 'error'); return; }
+        if (!window.ethereum) { showToast('请安装 MetaMask', 'error'); return; }
         try {
             const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
             STATE.userAddress = accounts[0];
@@ -213,7 +213,7 @@
             document.getElementById('wallet-section').classList.add('visible');
             document.getElementById('connect-btn').style.display = 'none';
             document.getElementById('balance-display').textContent = formatNumber(STATE.balance);
-            showToast('Wallet connected!', 'success');
+            showToast('钱包已连接！', 'success');
             updateFeedButton();
             connectWebSocket();
         } catch (err) {
@@ -251,7 +251,7 @@
                     STATE.timeLeft = data.endTime - Math.floor(Date.now() / 1000);
                     STATE.foodBets = [0,0,0,0,0,0,0,0];
                     STATE.selectedFood = null;
-                    document.getElementById('status-text').textContent = 'Select a food and place your bet!';
+                    document.getElementById('status-text').textContent = '选择食物并下注！';
                     renderFoodGrid();
                     updateFeedButton();
                 }
@@ -276,8 +276,8 @@
     function handleSettlement(data) {
         const { winningFood, isNoContest, playerResults } = data;
         document.getElementById('status-text').textContent = isNoContest
-            ? `No contest — all bets returned. Frog ate ${FOODS[winningFood]?.emoji || '?'}`
-            : `Frog ate ${FOODS[winningFood]?.emoji || '?'}!`;
+            ? `无竞争局 — 全额返还。青蛙吃了 ${FOODS[winningFood]?.emoji || '?'}`
+            : `青蛙吃了 ${FOODS[winningFood]?.emoji || '?'}！`;
 
         // Highlight cards
         document.querySelectorAll('.food-card').forEach(card => {
@@ -291,11 +291,67 @@
         if (playerResults && STATE.userAddress) {
             const result = playerResults[STATE.userAddress.toLowerCase()];
             if (result) {
-                if (result.result === 'win') showToast(`🎉 You won ${formatNumber(result.changeAmount)} OEOE!`, 'success');
-                else showToast(`😢 You lost ${formatNumber(Math.abs(result.changeAmount))} OEOE`, 'error');
+                if (result.result === 'win') showToast(`🎉 赢了 ${formatNumber(result.changeAmount)} OEOE！`, 'success');
+                else showToast(`😢 输了 ${formatNumber(Math.abs(result.changeAmount))} OEOE`, 'error');
             }
         }
         updateFeedButton();
+    }
+
+    // ==================== Deposit & Withdraw ====================
+    async function depositOEOE() {
+        if (!STATE.walletConnected) return;
+        const amount = prompt('请输入存入金额 (OEOE):');
+        if (!amount || isNaN(amount) || Number(amount) <= 0) return;
+        try {
+            showToast('正在处理存入...', 'info');
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await provider.getSigner();
+            const tokenContract = new ethers.Contract(STATE.config.contracts.token, [
+                'function approve(address,uint256) returns (bool)',
+                'function allowance(address,address) view returns (uint256)'
+            ], signer);
+            const amountWei = ethers.parseUnits(amount, 9);
+            const allowance = await tokenContract.allowance(STATE.userAddress, STATE.config.contracts.game);
+            if (allowance < amountWei) {
+                showToast('请在钱包中确认授权...', 'info');
+                const approveTx = await tokenContract.approve(STATE.config.contracts.game, amountWei);
+                await approveTx.wait();
+                showToast('授权成功！正在存入...', 'info');
+            }
+            const gameContract = new ethers.Contract(STATE.config.contracts.game, ['function deposit(uint256)'], signer);
+            const depositTx = await gameContract.deposit(amountWei);
+            const receipt = await depositTx.wait();
+            await fetch(`${SERVER_URL}/api/deposit`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ player: STATE.userAddress, amount: amount, txHash: receipt.hash })
+            });
+            showToast(`成功存入 ${amount} OEOE！`, 'success');
+        } catch (err) {
+            showToast('存入失败: ' + (err.reason || err.message), 'error');
+        }
+    }
+
+    async function withdrawOEOE() {
+        if (!STATE.walletConnected) return;
+        const amount = prompt('请输入提取金额 (OEOE):');
+        if (!amount || isNaN(amount) || Number(amount) <= 0) return;
+        try {
+            showToast('正在处理提取...', 'info');
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await provider.getSigner();
+            const gameContract = new ethers.Contract(STATE.config.contracts.game, ['function withdraw(uint256)'], signer);
+            const amountWei = ethers.parseUnits(amount, 9);
+            const withdrawTx = await gameContract.withdraw(amountWei);
+            const receipt = await withdrawTx.wait();
+            await fetch(`${SERVER_URL}/api/withdraw`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ player: STATE.userAddress, amount: amount, txHash: receipt.hash, token: STATE.sessionToken })
+            });
+            showToast(`成功提取 ${amount} OEOE！`, 'success');
+        } catch (err) {
+            showToast('提取失败: ' + (err.reason || err.message), 'error');
+        }
     }
 
     // ==================== Betting ====================
@@ -311,12 +367,12 @@
             });
             const data = await res.json();
             if (data.success) {
-                showToast(`Bet ${formatNumber(STATE.betAmount)} on ${FOODS[STATE.selectedFood].emoji}`, 'success');
+                showToast(`投注 ${formatNumber(STATE.betAmount)} 在 ${FOODS[STATE.selectedFood].emoji}`, 'success');
             } else {
-                showToast(data.error || 'Bet failed', 'error');
+                showToast(data.error || '投注失败', 'error');
             }
         } catch (err) {
-            showToast('Bet failed: ' + err.message, 'error');
+            showToast('投注失败: ' + err.message, 'error');
         }
         updateFeedButton();
     }
@@ -341,6 +397,12 @@
 
     // ==================== Init ====================
     async function init() {
+        // Load config (contract addresses)
+        try {
+            const configRes = await fetch(`${SERVER_URL}/api/config`);
+            STATE.config = await configRes.json();
+        } catch (e) { console.error('Failed to load config:', e); }
+
         renderFoodGrid();
 
         // Bet buttons
@@ -366,6 +428,8 @@
         document.getElementById('feed-btn').addEventListener('click', placeBet);
         document.getElementById('connect-btn').addEventListener('click', connectWallet);
         document.getElementById('disconnect-btn').addEventListener('click', disconnectWallet);
+        document.getElementById('deposit-btn').addEventListener('click', depositOEOE);
+        document.getElementById('withdraw-btn').addEventListener('click', withdrawOEOE);
 
         // Load game state
         try {
