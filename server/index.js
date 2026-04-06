@@ -59,7 +59,7 @@ function formatAddr(addr) {
 }
 
 // ============ Database (PostgreSQL adapter) ============
-const { createAdapter } = require(path.join(__dirname, '..', '..', '..', 'new-oeoe-game', 'db-adapter'));
+const { createAdapter } = require('./db-adapter');
 const dbAdapter = createAdapter();
 
 // DB shim for callback-style access
