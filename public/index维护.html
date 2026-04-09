@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏维护中 - OEOE Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', 'Orbitron', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            min-height: 100vh;
+            color: #e2e8f0;
+        }
+        
+        .font-tech {
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 10px rgba(34, 211, 238, 0.5), 0 0 20px rgba(34, 211, 238, 0.3);
+        }
+        
+        .pulse-glow {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { 
+                text-shadow: 0 0 10px rgba(34, 211, 238, 0.5), 0 0 20px rgba(34, 211, 238, 0.3);
+            }
+            50% { 
+                text-shadow: 0 0 20px rgba(34, 211, 238, 0.8), 0 0 40px rgba(34, 211, 238, 0.5);
+            }
+        }
+        
+        .frog-bounce {
+            animation: frog-bounce 3s ease-in-out infinite;
+        }
+        
+        @keyframes frog-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #22d3ee, transparent);
+            animation: scan 3s linear infinite;
+            opacity: 0.3;
+        }
+        
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+        
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <!-- Scan line effect -->
+    <div class="scan-line"></div>
+    
+    <div class="text-center px-4">
+        <!-- Frog Icon -->
+        <div class="frog-bounce text-8xl mb-8">
+            🐸
+        </div>
+        
+        <!-- Title -->
+        <h1 class="font-tech text-4xl md:text-5xl font-black text-cyan-400 glow-text pulse-glow mb-6">
+            游戏维护中
+        </h1>
+        
+        <!-- Message Card -->
+        <div class="glass-card rounded-2xl p-8 max-w-lg mx-auto mb-8">
+            <div class="text-6xl mb-4">🔧</div>
+            <p class="text-lg text-slate-300 mb-4" id="message">
+                游戏暂时关闭，请稍后再来
+            </p>
+            <p class="text-sm text-slate-500">
+                预计恢复时间: <span id="countdown" class="text-cyan-400 font-tech">--:--</span>
+            </p>
+        </div>
+        
+        <!-- Info -->
+        <div class="text-slate-500 text-sm">
+            <p><i class="fa-solid fa-clock mr-2"></i>如有疑问请联系管理员</p>
+        </div>
+        
+        <!-- Time -->
+        <div class="mt-8 text-slate-600 text-xs font-tech">
+            <p id="server-time">--:--:--</p>
+        </div>
+    </div>
+    
+    <script>
+        // Update server time
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit' 
+            });
+            const dateStr = now.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+            document.getElementById('server-time').textContent = dateStr + ' ' + timeStr;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // URL params for custom message and countdown
+        const params = new URLSearchParams(window.location.search);
+        
+        // Custom message
+        if (params.get('msg')) {
+            document.getElementById('message').textContent = decodeURIComponent(params.get('msg'));
+        }
+        
+        // Countdown time (in minutes)
+        if (params.get('until')) {
+            const targetTime = new Date(params.get('until')).getTime();
+            
+            function updateCountdown() {
+                const now = Date.now();
+                const diff = targetTime - now;
+                
+                if (diff <= 0) {
+                    document.getElementById('countdown').textContent = '即将恢复';
+                    return;
+                }
+                
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                let timeStr = '';
+                if (hours > 0) {
+                    timeStr += hours + '时';
+                }
+                timeStr += minutes.toString().padStart(2, '0') + '分';
+                timeStr += seconds.toString().padStart(2, '0') + '秒';
+                
+                document.getElementById('countdown').textContent = timeStr;
+            }
+            
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+    </script>
+</body>
+</html>

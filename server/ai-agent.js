@@ -1,9 +1,9 @@
-/**
- * AI Strategy Analysis Engine for FrogGame
+﻿/**
+ * AI Strategy 轮分析 Engine for FrogGame
  * 
  * Provides:
- * - Real-time betting distribution analysis
- * - Historical food selection pattern analysis
+ * - Real-time betting distribution 轮分析
+ * - Historical food selection pattern 轮分析
  * - Player risk assessment and bet sizing recommendations
  * - Natural language game advisor (chat)
  */
@@ -25,18 +25,18 @@ class AIAgent {
         this.config = deps.config;
 
         this.FOODS = [
-            { index: 0, name: 'Apple', emoji: '🍎' },
-            { index: 1, name: 'Banana', emoji: '🍌' },
-            { index: 2, name: 'Cherry', emoji: '🍒' },
-            { index: 3, name: 'Grape', emoji: '🍇' },
-            { index: 4, name: 'Watermelon', emoji: '🍉' },
-            { index: 5, name: 'Peach', emoji: '🍑' },
-            { index: 6, name: 'Strawberry', emoji: '🍓' },
-            { index: 7, name: 'Orange', emoji: '🍊' }
+            { index: 0, name: '苹果', emoji: '🍎' },
+            { index: 1, name: '香蕉', emoji: '🍌' },
+            { index: 2, name: '蛋糕', emoji: '🍰' },
+            { index: 3, name: '糖果', emoji: '🍬' },
+            { index: 4, name: '鸡腿', emoji: '🍗' },
+            { index: 5, name: '鱼', emoji: '🐟' },
+            { index: 6, name: '虾', emoji: '🦐' },
+            { index: 7, name: '螃蟹', emoji: '🦀' }
         ];
     }
 
-    // ==================== Strategy Analysis ====================
+    // ==================== Strategy 轮分析 ====================
 
     /**
      * Analyze current round betting distribution and recommend strategy
@@ -71,7 +71,7 @@ class AIAgent {
         // Each food has equal 1/8 chance of being eaten
         // If your food is NOT eaten (7/8 chance), you win
         // Reward comes from the eaten food's pool (losing pool)
-        // Strategy: bet on food with LEAST bets = highest potential reward ratio
+        // Strategy: bet on food，已投喂 LEAST bets = highest potential reward ratio
         const sortedByBet = [...foodStats].sort((a, b) => a.totalBet - b.totalBet);
         const leastBetted = sortedByBet.filter(f => f.totalBet > 0);
         const mostBetted = [...sortedByBet].reverse();
@@ -88,7 +88,7 @@ class AIAgent {
             //   - 7/8 chance: another food is eaten → you get share of loser pool * 90%
             const survivalRate = 7 / 8;
             const otherFoodsPool = totalPool - food.totalBet;
-            // Expected loser pool = average of each other food's pool (each with 1/7 chance of being the eaten one)
+            // Expected loser pool = average of each other food's pool (each，已投喂 1/7 chance of being the eaten one)
             // Simplified: any of the 7 other foods could be eaten, each equally likely
             // Average losing pool per scenario = otherFoodsPool / 7 (not exactly, but approximation)
             // Actually: if food X survives, one of the OTHER 7 foods is eaten.
@@ -126,39 +126,9 @@ class AIAgent {
             };
         });
 
-        // Recommendations
+        // AI 推荐已移除 — 不向玩家暴露策略建议
         const recommendations = [];
-
-        if (unbettedFoods.length > 0) {
-            recommendations.push({
-                type: 'opportunity',
-                message: `${unbettedFoods.length} food(s) have no bets yet — betting on them means maximum reward share if they survive.`,
-                foods: unbettedFoods.map(f => f.emoji + ' ' + f.name)
-            });
-        }
-
-        if (bettedFoods.length === 1) {
-            recommendations.push({
-                type: 'warning',
-                message: 'Only 1 food has bets — if no other food gets bets, this will be a no-contest round (all bets returned).'
-            });
-        }
-
         const bestEV = foodEV.reduce((best, f) => f.ev > best.ev ? f : best, foodEV[0]);
-        if (bestEV.ev > 0) {
-            recommendations.push({
-                type: 'strategy',
-                message: `Best expected value: ${bestEV.emoji} ${bestEV.name} (EV: +${bestEV.ev} per OEOE bet)`,
-                food: bestEV
-            });
-        }
-
-        if (mostBetted[0] && mostBetted[0].totalBet > 0) {
-            recommendations.push({
-                type: 'risk',
-                message: `Highest risk food: ${mostBetted[0].emoji} ${mostBetted[0].name} with ${mostBetted[0].totalBet.toLocaleString()} OEOE — most competition for rewards.`
-            });
-        }
 
         return {
             roundId,
@@ -173,7 +143,7 @@ class AIAgent {
         };
     }
 
-    // ==================== History Analysis ====================
+    // ==================== History 轮分析 ====================
 
     /**
      * Analyze historical data: food selection frequency, win rates
@@ -268,7 +238,7 @@ class AIAgent {
             foodAnalysis: foodAnalysis.sort((a, b) => b.eatenCount - a.eatenCount),
             recentEatenSequence: recentEaten.slice(0, 10).map(i => this.FOODS[i]?.emoji || '?'),
             roundsSinceEaten: roundsSinceEaten.sort((a, b) => b.roundsSinceEaten - a.roundsSinceEaten),
-            disclaimer: 'Each food has an equal 1/8 (12.5%) chance of being eaten. Past results do not influence future outcomes. This analysis is for reference only.',
+            disclaimer: '每种食物被吃的概率均为 1/8（12.5%）。历史结果不影响未来结果，本分析仅供参考。',
             timestamp: Date.now()
         };
     }
@@ -333,7 +303,7 @@ class AIAgent {
             }
         }
 
-        // Bet amounts analysis
+        // Bet amounts 轮分析
         const betAmounts = history.map(h => Number(h.bet_amount || 0) / 1e9).filter(a => a > 0);
         const avgBet = betAmounts.length > 0 ? betAmounts.reduce((s, a) => s + a, 0) / betAmounts.length : 0;
         const maxBet = Math.max(0, ...betAmounts);
@@ -362,7 +332,7 @@ class AIAgent {
         }
 
         // Bet sizing recommendations (Kelly-inspired, simplified)
-        // With 7/8 win rate and variable payoff, optimal bet fraction is small
+        //，已投喂 7/8 win rate and variable payoff, optimal bet fraction is small
         const suggestedBetPercent = riskProfile === 'aggressive' ? 5 : riskProfile === 'conservative' ? 2 : 3;
         const suggestedBet = Math.max(1000, Math.floor(balanceOEOE * suggestedBetPercent / 100));
 
@@ -383,14 +353,14 @@ class AIAgent {
         }
 
         if (winRate > 0 && winRate < 50 && totalGames >= 10) {
-            recommendations.push('Your win rate is below average. This is likely variance — with enough games it should converge to ~87.5% survival rate.');
+            recommendations.push('Your win rate is below average. This is likely variance —，已投喂 enough games it should converge to ~87.5% survival rate.');
         }
 
         recommendations.push(`Suggested bet size: ${suggestedBet.toLocaleString()} OEOE (${suggestedBetPercent}% of balance)`);
 
         return {
             address: addr,
-            balance: balanceOEOE,
+            余额: balanceOEOE,
             stats: {
                 totalGames,
                 wins,
@@ -425,7 +395,7 @@ class AIAgent {
     async chat(message, address) {
         const msg = (message || '').toLowerCase().trim();
         if (!msg) {
-            return { reply: 'Please send a message. Try "analyze" or "what should I bet?"', actions: [] };
+            return { reply: '请输入消息。试试分析或投多少。', actions: [] };
         }
 
         const actions = [];
@@ -435,14 +405,14 @@ class AIAgent {
         if (msg.includes('analyz') || msg.includes('分析') || msg.includes('局势') || msg.includes('situation')) {
             const strategy = await this.analyzeStrategy(this.getGameState().roundId);
             const topEV = strategy.foodEV[0];
-            reply = `📊 **Round #${strategy.roundId} Analysis**\n`;
-            reply += `Total pool: ${strategy.totalPool.toLocaleString()} OEOE\n`;
-            reply += `Active foods: ${strategy.foodStats.filter(f => f.totalBet > 0).length}/8\n`;
+            reply = `📊 **第 ${strategy.roundId} 轮分析**\n`;
+            reply += `奖池总额: ${strategy.totalPool.toLocaleString()} OEOE\n`;
+            reply += `有人投喂: ${strategy.foodStats.filter(f => f.totalBet > 0).length}/8\n`;
             if (strategy.unbettedFoods.length > 0) {
-                reply += `\n🎯 Unbetted foods (max reward potential): ${strategy.unbettedFoods.map(f => f.emoji).join(' ')}\n`;
+                reply += `\n🎯 无人投喂（最大收益潜力）: ${strategy.unbettedFoods.map(f => f.emoji).join(' ')}\n`;
             }
             if (topEV) {
-                reply += `\n💡 Best EV: ${topEV.emoji} ${topEV.name} (EV: ${topEV.ev > 0 ? '+' : ''}${topEV.ev})`;
+                reply += `\n💡 最佳期望值: ${topEV.emoji} ${topEV.name} (EV: ${topEV.ev > 0 ? '+' : ''}${topEV.ev})`;
             }
             for (const rec of strategy.recommendations) {
                 reply += `\n${rec.type === 'warning' ? '⚠️' : rec.type === 'opportunity' ? '🎯' : '💡'} ${rec.message}`;
@@ -451,15 +421,15 @@ class AIAgent {
 
         } else if (msg.includes('how much') || msg.includes('多少') || msg.includes('投多少') || msg.includes('bet size') || msg.includes('sizing')) {
             if (!address) {
-                reply = '🔗 Please connect your wallet first so I can assess your risk profile.';
+                reply = '🔗 请先连接钱包，我才能评估你的风险偏好。';
             } else {
                 const risk = await this.assessRisk(address);
-                reply = `💰 **Bet Recommendation for ${address.slice(0, 6)}...${address.slice(-4)}**\n`;
-                reply += `Balance: ${risk.balance.toLocaleString()} OEOE\n`;
-                reply += `Risk profile: ${risk.riskProfile} (score: ${risk.riskScore}/100)\n`;
-                reply += `Suggested bet: ${risk.suggestedBet.toLocaleString()} OEOE\n`;
+                reply = `💰 **投喂建议 — ${address.slice(0, 6)}...${address.slice(-4)}**\n`;
+                reply += `余额: ${risk.balance.toLocaleString()} OEOE\n`;
+                reply += `风险偏好: ${risk.riskProfile} (score: ${risk.riskScore}/100)\n`;
+                reply += `建议投喂: ${risk.suggestedBet.toLocaleString()} OEOE\n`;
                 if (risk.streak.type && risk.streak.count > 1) {
-                    reply += `Current streak: ${risk.streak.count}x ${risk.streak.type}\n`;
+                    reply += `当前连续: ${risk.streak.count}x ${risk.streak.type}\n`;
                 }
                 for (const rec of risk.recommendations) {
                     reply += `\n• ${rec}`;
@@ -469,10 +439,10 @@ class AIAgent {
 
         } else if (msg.includes('history') || msg.includes('历史') || msg.includes('统计') || msg.includes('stats')) {
             const hist = await this.analyzeHistory();
-            reply = `📈 **Historical Analysis** (${hist.totalRounds} rounds)\n`;
-            reply += `Contested: ${hist.contestedRounds} | No-contest: ${hist.noContestRounds}\n\n`;
-            reply += `Recent eaten: ${hist.recentEatenSequence.join(' ')}\n\n`;
-            reply += `Food eaten frequency:\n`;
+            reply = `📈 **Historical 轮分析** (${hist.totalRounds} 轮）\n`;
+            reply += `有效竞争: ${hist.contestedRounds} | 无竞争: ${hist.noContestRounds}\n\n`;
+            reply += `最近被吃: ${hist.recentEatenSequence.join(' ')}\n\n`;
+            reply += `食物被吃频率:\n`;
             for (const food of hist.foodAnalysis.slice(0, 4)) {
                 reply += `${food.emoji} ${food.name}: ${food.eatenCount}x (${food.eatenRate}%, deviation: ${food.deviation > 0 ? '+' : ''}${food.deviation}%)\n`;
             }
@@ -483,34 +453,34 @@ class AIAgent {
             try {
                 const tokenAddr = this.config.TOKEN_ADDRESS;
                 const overview = await this.onchainos.getMarketOverview(tokenAddr);
-                reply = `💹 **OEOE Market Data**\n`;
+                reply = `💹 **OEOE 市场数据**\n`;
                 if (overview.price) {
-                    reply += `Price: $${overview.price.price || 'N/A'}\n`;
+                    reply += `价格: $${overview.price.price || '暂无'}\n`;
                 }
                 if (overview.tokenInfo) {
-                    reply += `Market Cap: ${overview.tokenInfo.marketCap || 'N/A'}\n`;
+                    reply += `市值: ${overview.tokenInfo.marketCap || '暂无'}\n`;
                 }
-                reply += `\nData from OnchainOS DEX API`;
+                reply += `\n数据来源: OnchainOS DEX API`;
             } catch (err) {
-                reply = `❌ Failed to fetch market data: ${err.message}`;
+                reply = `❌ 获取市场数据失败: ${err.message}`;
             }
 
         } else if (msg.includes('help') || msg.includes('帮助') || msg.includes('what can') || msg.includes('你能')) {
-            reply = `🐸 **FrogGame AI Assistant**\n\n`;
-            reply += `Available commands:\n`;
-            reply += `• "analyze" — Current round betting analysis\n`;
-            reply += `• "how much should I bet" — Personalized bet sizing\n`;
-            reply += `• "history" — Historical food statistics\n`;
-            reply += `• "price" — OEOE token market data\n`;
-            reply += `• "help" — Show this help\n`;
-            reply += `\nYou can also ask in Chinese! 也可以用中文问我。`;
+            reply = `🐸 **黑蛙游戏 AI 助手**\n\n`;
+            reply += `可用指令:\n`;
+            reply += `• "analyze" — Current round betting 轮分析\n`;
+            reply += `• "投多少" — 个性化投喂建议\n`;
+            reply += `• "历史" — 历史食物统计\n`;
+            reply += `• "价格" — OEOE 代币行情\n`;
+            reply += `• "帮助" — 显示本帮助\n`;
+            reply += `\n`;
 
         } else {
             // Default: try to provide a useful response
             const strategy = await this.analyzeStrategy(this.getGameState().roundId);
-            reply = `🐸 I'm not sure what you mean, but here's the current situation:\n`;
-            reply += `Round #${strategy.roundId} | Pool: ${strategy.totalPool.toLocaleString()} OEOE | Phase: ${strategy.phase}\n`;
-            reply += `\nType "help" for available commands.`;
+            reply = `🐸 不太确定你想问什么，这是当前局势:\n`;
+            reply += `第 ${strategy.roundId} | Pool: ${strategy.totalPool.toLocaleString()} OEOE | Phase: ${strategy.phase}\n`;
+            reply += `\n输入"帮助"查看可用指令。`;
         }
 
         return {

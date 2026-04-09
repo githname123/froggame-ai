@@ -1,487 +1,3827 @@
-<!DOCTYPE html>
-<html lang="en">
+﻿<!DOCTYPE html>
+
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>FrogGame AI | X Layer Chain Game</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
-<script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Roboto:wght@400;700&display=swap');
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Roboto', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; display: flex; flex-direction: column; }
-    .font-mono { font-family: 'Roboto Mono', monospace; }
-
-    /* Header */
-    header { background: #1e293b; border-bottom: 1px solid #334155; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
-    header h1 { font-size: 1.25rem; font-weight: bold; background: linear-gradient(to right, #22d3ee, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    header .subtitle { font-size: 0.7rem; color: #64748b; }
-    #wallet-section { display: none; text-align: right; }
-    #wallet-section.visible { display: block; }
-    #balance-display { font-size: 1.1rem; color: #facc15; font-weight: bold; }
-    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
-    .btn-primary { background: linear-gradient(to right, #2563eb, #7c3aed); color: white; }
-    .btn-primary:hover { opacity: 0.9; }
-    .btn-sm { padding: 4px 10px; font-size: 0.75rem; border-radius: 4px; }
-    .btn-green { background: #16a34a; color: white; }
-    .btn-red { background: #dc2626; color: white; }
-
-    /* Main game area */
-    main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; }
-    .game-info { display: flex; justify-content: space-between; width: 100%; max-width: 800px; margin-bottom: 20px; }
-    #round-display { font-size: 1.5rem; color: #22d3ee; font-weight: bold; }
-    #timer-display { font-size: 3rem; color: #ef4444; font-weight: 900; text-shadow: 0 0 10px rgba(239,68,68,0.5); }
-    #status-text { font-size: 1rem; color: #94a3b8; text-align: center; margin: 10px 0; }
-
-    /* Food grid */
-    #food-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; max-width: 600px; margin: 20px 0; }
-    .food-card { background: #1e293b; border: 2px solid #334155; border-radius: 10px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
-    .food-card:hover { border-color: #6366f1; transform: translateY(-2px); }
-    .food-card.selected { border-color: #f472b6; box-shadow: 0 0 15px rgba(244,114,182,0.4); transform: scale(1.05); }
-    .food-card.eaten { filter: grayscale(100%); opacity: 0.5; }
-    .food-card.winner { border-color: #22c55e; box-shadow: 0 0 20px rgba(34,197,94,0.4); }
-    .food-emoji { font-size: 2rem; }
-    .food-name { font-size: 0.7rem; color: #94a3b8; margin-top: 4px; }
-    .food-bet { font-size: 0.75rem; color: #facc15; margin-top: 4px; font-weight: bold; }
-
-    /* Footer controls */
-    footer { background: #1e293b; border-top: 1px solid #334155; padding: 12px 20px; }
-    .controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; max-width: 800px; margin: 0 auto; }
-    .bet-btn { padding: 8px 14px; background: #334155; border: 1px solid #475569; color: #e2e8f0; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
-    .bet-btn:hover { background: #475569; }
-    .bet-btn.active { background: #6366f1; border-color: #818cf8; }
-    #custom-bet { width: 80px; background: #0f172a; border: 1px solid #475569; border-radius: 6px; padding: 8px; color: white; text-align: center; font-size: 0.85rem; }
-    #feed-btn { padding: 10px 24px; background: linear-gradient(to right, #ec4899, #8b5cf6); color: white; border: none; border-radius: 20px; font-weight: bold; font-size: 1rem; cursor: pointer; }
-    #feed-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    /* Toast */
-    #toast-container { position: fixed; top: 20px; right: 20px; z-index: 200; }
-    .toast { background: rgba(30,41,59,0.95); border-left: 4px solid #22d3ee; padding: 10px 16px; border-radius: 4px; margin-bottom: 8px; color: #e2e8f0; font-size: 0.85rem; animation: slideIn 0.3s ease; }
-    .toast.error { border-left-color: #ef4444; }
-    .toast.success { border-left-color: #22c55e; }
-    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-    @media (max-width: 768px) {
-        #food-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
-        .food-card { padding: 10px; }
-        .food-emoji { font-size: 1.5rem; }
-        #timer-display { font-size: 2rem; }
-    }
-</style>
-</head>
-<body>
-
-<div id="toast-container"></div>
-
-<header>
-    <div>
-        <h1>🐸 FrogGame AI</h1>
-        <div class="subtitle">X Layer • AI 策略引擎</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;">
-        <div id="wallet-section">
-            <div style="font-size:0.7rem;color:#64748b;">余额 (OEOE)</div>
-            <div id="balance-display" class="font-mono">0</div>
-            <div style="margin-top:4px;display:flex;gap:4px;">
-                <button class="btn btn-sm btn-green" id="deposit-btn">存入</button>
-                <button class="btn btn-sm btn-green" id="withdraw-btn">提取</button>
-                <button class="btn btn-sm btn-red" id="disconnect-btn">断开</button>
-            </div>
-        </div>
-        <button class="btn btn-primary" id="connect-btn"><i class="fa-solid fa-wallet"></i> 连接钱包</button>
-    </div>
-</header>
-
-<main>
-    <div class="game-info">
-        <div id="round-display" class="font-mono">#0</div>
-        <div id="timer-display" class="font-mono">-</div>
-    </div>
-    <div id="status-text">连接钱包开始游戏</div>
-    <div id="food-grid"></div>
-</main>
-
-<footer>
-    <div class="controls">
-        <button class="bet-btn" data-amount="10000">10K</button>
-        <button class="bet-btn" data-amount="100000">100K</button>
-        <button class="bet-btn" data-amount="1000000">1M</button>
-        <input type="text" id="custom-bet" placeholder="自定义" inputmode="numeric" />
-        <button id="feed-btn" disabled><i class="fa-solid fa-hand-holding-dollar"></i> 投喂</button>
-    </div>
-</footer>
-
-<!-- AI Panel (loaded from ai-panel.js) -->
-<script src="ai-panel.js"></script>
-
+<title>黑蛙来了！ | X Layer Chain Game</title>
+<!-- Favicon - 使用 logo.jpg 作为浏览器标签页图标 -->
+<link rel="icon" type="image/jpeg" href="logo.jpg"/>
+<link rel="shortcut icon" type="image/jpeg" href="logo.jpg"/>
+<!-- Tailwind CSS - 自托管编译版（支持 SRI 完整性校验）-->
+<link rel="stylesheet" href="dist/tailwind.min.css" integrity="sha384-qhxDF98moC3iF5iQkCeGpJMyNJ8gz0jT+i/mJVSKF2NzlYlFWWD4mo7Sr+kUtoLu" crossorigin="anonymous"/>
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+<!-- Canvas Confetti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" integrity="sha384-HAH79XdRvHr6axVGh4xQWVCp14kcd32bNk4Xu0sHDHtFQ42n6BAM8ykvB47dGz6D" crossorigin="anonymous"></script>
+<!-- Ethers.js - 主CDN -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js" integrity="sha384-ro/pNP1sfmhdbpq60NKzKAYve9JahlgCklXcKvudVEd/osRAYz2RlPG5TvB7Q04t" crossorigin="anonymous"></script>
+<!-- Ethers.js - 备用CDN -->
 <script>
-    // ==================== Game Configuration ====================
-    const SERVER_URL = window.location.origin;
-    const FOODS = [
-        { name: '苹果', emoji: '🍎' },
-        { name: '香蕉', emoji: '🍌' },
-        { name: '樱桃', emoji: '🍒' },
-        { name: '葡萄', emoji: '🍇' },
-        { name: '西瓜', emoji: '🍉' },
-        { name: '桃子', emoji: '🍑' },
-        { name: '草莓', emoji: '🍓' },
-        { name: '橙子', emoji: '🍊' }
-    ];
-
-    const STATE = {
-        walletConnected: false,
-        userAddress: null,
-        sessionToken: null,
-        balance: 0,
-        selectedFood: null,
-        betAmount: 10000,
-        roundId: 0,
-        phase: 'IDLE',
-        timeLeft: 0,
-        foodBets: [0,0,0,0,0,0,0,0],
-        ws: null,
-        config: null
-    };
-
-    // Expose for AI panel
-    window.connectedAddress = null;
-
-    // ==================== Utility ====================
-    function formatNumber(n) { return Math.floor(n).toLocaleString(); }
-
-    function showToast(msg, type = 'info') {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.textContent = msg;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 4000);
+window.addEventListener('load', function() {
+    if (typeof ethers === 'undefined') {
+        console.warn('主CDN加载失败，尝试备用CDN...');
+        var script = document.createElement('script');
+        script.src = 'https://unpkg.com/ethers@6.9.0/dist/ethers.umd.min.js';
+        script.onload = function() {
+            console.log('备用CDN加载成功');
+        };
+        script.onerror = function() {
+            console.error('所有CDN加载失败');
+            alert('网络问题导致库加载失败，请检查网络或VPN');
+        };
+        document.head.appendChild(script);
     }
-
-    // ==================== Food Grid ====================
-    function renderFoodGrid() {
-        const grid = document.getElementById('food-grid');
-        grid.innerHTML = '';
-        FOODS.forEach((food, i) => {
-            const card = document.createElement('div');
-            card.className = 'food-card';
-            card.dataset.index = i;
-            if (STATE.selectedFood === i) card.classList.add('selected');
-            card.innerHTML = `
-                <div class="food-emoji">${food.emoji}</div>
-                <div class="food-name">${food.name}</div>
-                <div class="food-bet">${formatNumber(STATE.foodBets[i])}</div>
-            `;
-            card.addEventListener('click', () => selectFood(i));
-            grid.appendChild(card);
-        });
-    }
-
-    function selectFood(index) {
-        if (STATE.phase !== 'BETTING') return;
-        STATE.selectedFood = index;
-        renderFoodGrid();
-        updateFeedButton();
-    }
-
-    function updateFeedButton() {
-        const btn = document.getElementById('feed-btn');
-        btn.disabled = !STATE.walletConnected || STATE.phase !== 'BETTING' || STATE.selectedFood === null || STATE.betAmount <= 0;
-    }
-
-    // ==================== Wallet Connection ====================
-    async function connectWallet() {
-        if (!window.ethereum) { showToast('请安装 MetaMask', 'error'); return; }
-        try {
-            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-            STATE.userAddress = accounts[0];
-            STATE.walletConnected = true;
-            window.connectedAddress = STATE.userAddress;
-
-            // Login to server
-            const res = await fetch(`${SERVER_URL}/api/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ player: STATE.userAddress })
-            });
-            const data = await res.json();
-            if (data.success) {
-                STATE.sessionToken = data.token;
-                STATE.balance = data.balance || 0;
+});
+</script>
+<style>
+        /* Custom Animations & Styles */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Roboto:wght@400;700&display=swap');
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
             }
 
-            document.getElementById('wallet-section').classList.add('visible');
-            document.getElementById('connect-btn').style.display = 'none';
-            document.getElementById('balance-display').textContent = formatNumber(STATE.balance);
-            showToast('钱包已连接！', 'success');
-            updateFeedButton();
-            connectWebSocket();
-        } catch (err) {
-            showToast('Failed to connect: ' + err.message, 'error');
+            /* 缩小标题 - 响应式 */
+            header h1 {
+                font-size: clamp(0.75rem, 4vw, 1.25rem) !important;
+            }
+
+            /* 缩小倒计时 */
+            #timer-display {
+                font-size: 3rem !important;
+            }
+
+            /* 缩小轮次显示 */
+            #game-round-display {
+                font-size: 1.25rem !important;
+            }
+
+            /* 缩小青蛙 */
+            #frog-img {
+                width: 15vw !important;
+                height: 15vw !important;
+                max-width: 80px !important;
+                max-height: 80px !important;
+            }
+
+            /* 缩小食物卡片 */
+            .food-card {
+                height: 80px !important;
+                padding: 8px !important;
+            }
+
+            .food-card .text-4xl {
+                font-size: 1.5rem !important;
+            }
+
+            /* 缩小投喂按钮 */
+            #feed-btn {
+                padding: 8px 16px !important;
+                font-size: 0.875rem !important;
+            }
+
+            /* 缩小金额按钮 */
+            .bet-btn {
+                padding: 6px 12px !important;
+                font-size: 0.75rem !important;
+            }
+
+            /* 缩小食物网格间距 */
+            #food-grid {
+                gap: 8px !important;
+                margin-top: 100px !important;
+            }
+
+            /* 隐藏部分文字 */
+            .text-xs {
+                font-size: 0.625rem !important;
+            }
         }
-    }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            user-select: none;
+        }
 
-    function disconnectWallet() {
-        STATE.walletConnected = false;
-        STATE.userAddress = null;
-        STATE.sessionToken = null;
-        window.connectedAddress = null;
-        document.getElementById('wallet-section').classList.remove('visible');
-        document.getElementById('connect-btn').style.display = '';
-        if (STATE.ws) STATE.ws.close();
-    }
+        .font-tech {
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        /* 数字显示不使用Orbitron，避免0中间有横线 */
+        #timer-display,
+        #game-round-display,
+        #balance-display,
+        .font-tech {
+            font-family: 'Roboto Mono', 'Consolas', 'Monaco', monospace;
+        }
 
-    // ==================== WebSocket ====================
-    function connectWebSocket() {
-        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        STATE.ws = new WebSocket(`${protocol}//${location.host}`);
+        /* Neon Glow Effects */
+        .neon-text {
+            text-shadow: 0 0 5px #a855f7, 0 0 10px #a855f7;
+        }
+        
+        .neon-border {
+            box-shadow: 0 0 5px #06b6d4, inset 0 0 5px #06b6d4;
+        }
 
-        STATE.ws.onopen = () => {
-            if (STATE.userAddress && STATE.sessionToken) {
-                STATE.ws.send(JSON.stringify({ type: 'login', address: STATE.userAddress, token: STATE.sessionToken }));
-            }
+        .food-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: visible;
+        }
+
+        .food-card.selected {
+            border-color: #f472b6;
+            box-shadow: 0 0 15px #f472b6;
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .food-card.eaten {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            filter: grayscale(100%);
+            opacity: 0.6;
+        }
+
+        .food-card.winner {
+            border-color: #22c55e;
+            box-shadow: 0 0 20px #22c55e;
+        }
+
+        /* 胜利：食物卡片光效脉冲 */
+        .food-card.winner-pulse {
+            animation: winnerPulse 0.6s ease-out infinite alternate;
+            border-color: #22c55e;
+        }
+
+        @keyframes winnerPulse {
+            from { box-shadow: 0 0 10px #22c55e, 0 0 20px #22c55e88; transform: scale(1.0); }
+            to   { box-shadow: 0 0 25px #22c55e, 0 0 50px #22c55e66; transform: scale(1.04); }
+        }
+
+        /* 失败：食物卡片抖动+红色渐暗 */
+        .food-card.loser-fade {
+            animation: loserFade 0.8s ease-out forwards;
+        }
+
+        @keyframes loserFade {
+            0%  { filter: grayscale(0%) brightness(1.2); box-shadow: 0 0 20px #ef4444; }
+            40% { filter: grayscale(30%) brightness(0.9); transform: translate3d(-3px, 0, 0); }
+            60% { transform: translate3d(3px, 0, 0); }
+            80% { transform: translate3d(-2px, 0, 0); }
+            100%{ filter: grayscale(100%) brightness(0.6); opacity: 0.5; box-shadow: none; }
+        }
+
+        /* 全屏胜利遮罩（短暂） */
+        #win-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 200;
+            display: none;
+        }
+
+        #win-overlay.active {
+            display: block;
+            animation: winOverlay 1.2s ease-out forwards;
+        }
+
+        @keyframes winOverlay {
+            0%   { background: radial-gradient(circle, rgba(34,197,94,0.35) 0%, transparent 70%); opacity: 1; }
+            100% { background: radial-gradient(circle, rgba(34,197,94,0) 0%, transparent 70%); opacity: 0; }
+        }
+
+        /* 全屏失败遮罩（短暂） */
+        #lose-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 200;
+            display: none;
+        }
+
+        #lose-overlay.active {
+            display: block;
+            animation: loseOverlay 1.5s ease-out forwards;
+        }
+
+        @keyframes loseOverlay {
+            0%   { background: radial-gradient(circle, rgba(239,68,68,0.4) 0%, transparent 70%); opacity: 1; }
+            60%  { opacity: 0.8; }
+            100% { background: radial-gradient(circle, rgba(239,68,68,0) 0%, transparent 70%); opacity: 0; }
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* Frog Canvas Container */
+        #frog-container {
+            position: absolute;
+            pointer-events: none;
+            z-index: 100;
+            /* [FIX-ANIM3] 更自然的缓动曲线：加速起跳、减速落地 */
+            transition: top 0.4s cubic-bezier(0.4, 0, 0.2, 1), left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #frog-canvas {
+            width: 120px;
+            height: 120px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b; 
+        }
+
+        /* Toast Notification */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            background: rgba(30, 41, 59, 0.95);
+            border-left: 4px solid #06b6d4;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease-out forwards;
+            backdrop-filter: blur(4px);
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Path line */
+        .path-line {
+            position: absolute;
+            background: linear-gradient(90deg, rgba(6, 182, 212, 0.3), rgba(168, 85, 247, 0.3));
+            height: 3px;
+            border-radius: 2px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .path-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: rgba(6, 182, 212, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        /* Quick amount button selected state */
+        .deposit-quick-btn.selected,
+        .withdraw-quick-btn.selected {
+            background: linear-gradient(to right, #0891b2, #2563eb) !important;
+            border-color: #22d3ee !important;
+            color: white !important;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+        }
+        
+        /* All buttons selected state - more obvious */
+        #deposit-all-btn.selected {
+            background: linear-gradient(to right, #0891b2, #2563eb) !important;
+            border-color: #22d3ee !important;
+            color: white !important;
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.8), inset 0 0 10px rgba(255,255,255,0.3);
+            transform: scale(1.08);
+            font-weight: bold;
+        }
+        
+        #withdraw-all-btn.selected {
+            background: linear-gradient(to right, #ea580c, #dc2626) !important;
+            border-color: #fb923c !important;
+            color: white !important;
+            box-shadow: 0 0 15px rgba(251, 146, 60, 0.8), inset 0 0 10px rgba(255,255,255,0.3);
+            transform: scale(1.08);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+<!-- Toast Container -->
+<div id="toast-container"></div>
+<!-- 胜利/失败全屏遮罩（短暂闪光效果）-->
+<div id="win-overlay"></div>
+<div id="lose-overlay"></div>
+<!-- Header -->
+<header class="bg-slate-900 border-b border-slate-700 p-4 flex justify-between items-center shadow-lg z-20">
+<div class="flex items-center gap-3">
+<!-- Logo -->
+<img src="logo.jpg" alt="Logo" class="w-10 h-10 rounded-full object-cover shadow-lg" />
+<div>
+<h1 class="text-xl font-bold font-tech text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">黑蛙来了！</h1>
+<div class="text-xs text-slate-400 flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    X Layer Network
+                </div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<!-- Wallet Info -->
+<div class="hidden flex-col items-end mr-4" id="wallet-section">
+<div class="text-xs text-slate-400">余额 (OEOE)</div>
+<div class="text-lg font-bold text-yellow-400 font-tech" id="balance-display">0</div>
+<div class="flex gap-2 mt-1">
+<button class="text-xs bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded transition" id="header-deposit-btn">存入</button>
+<button class="text-xs bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded transition" id="header-withdraw-btn">提取</button>
+<button class="text-xs bg-red-600 hover:bg-red-500 text-white px-2 py-1 rounded transition" id="header-disconnect-btn" onclick="disconnectWallet()">断开</button>
+</div>
+</div>
+<button class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-4 py-2 rounded-lg font-bold transition shadow-lg border border-blue-400/30 flex items-center gap-2" id="connect-wallet-btn">
+<i class="fa-solid fa-wallet"></i> 连接钱包
+</button>
+<!-- Music Control -->
+<button class="text-slate-400 hover:text-white transition w-8 h-8 flex items-center justify-center" id="music-btn" title="背景音乐">
+<i class="fa-solid fa-music"></i>
+</button>
+<!-- Volume Control -->
+<button class="text-slate-400 hover:text-white transition w-8 h-8 flex items-center justify-center" id="volume-btn">
+<i class="fa-solid fa-volume-high"></i>
+</button>
+</div>
+</header>
+<!-- Main Game Area -->
+<main class="flex-1 relative bg-slate-950 overflow-hidden flex flex-col items-center justify-center p-4">
+<!-- Background Grid Effect -->
+<div class="absolute inset-0 z-0 opacity-20 pointer-events-none" style="background-image: linear-gradient(#334155 1px, transparent 1px), linear-gradient(90deg, #334155 1px, transparent 1px); background-size: 40px 40px;">
+</div>
+<!-- Round Display (Left) -->
+<div class="absolute top-4 left-4 z-30 flex flex-col items-start pointer-events-none">
+<div class="text-2xl font-bold text-cyan-400 font-tech" id="game-round-display">#0</div>
+</div>
+<!-- Countdown Display (Right) -->
+<div class="absolute top-4 right-4 z-30 flex flex-col items-end pointer-events-none">
+<div class="text-6xl font-black font-tech text-red-500 neon-text transition-transform duration-100" id="timer-display">-</div>
+</div>
+<!-- Frog Container - 位于食物上方，z-index 提高以覆盖食物卡片 -->
+<div class="absolute" id="frog-container" style="left: 50%; top: 80px; transform: translateX(-50%); z-index: 50;">
+    <img id="frog-img" src="frog.png" alt="frog" style="width: 20vw; height: 20vw; max-width: 150px; max-height: 150px; transition: transform 0.3s ease; filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.5));">
+</div>
+<!-- Food Grid - 下移为黑蛙腾出空间 -->
+<div class="grid grid-cols-4 gap-4 md:gap-6 w-full max-w-4xl z-10 relative mt-32" id="food-grid">
+<!-- Food items will be injected here by JS -->
+</div>
+<!-- Game Status Message -->
+<div class="mt-8 text-xl font-bold text-slate-300 h-8 flex items-center gap-2" id="game-status">
+<span id="status-text">请连接钱包开始游戏</span>
+</div>
+</main>
+<!-- Footer Controls -->
+<footer class="bg-slate-900 border-t border-slate-700 p-4 z-20">
+<div class="max-w-4xl mx-auto flex flex-col md:flex-row gap-4 items-center justify-between">
+<!-- Bet Controls -->
+<div class="flex flex-wrap items-center justify-center gap-3 flex-1">
+<button class="bet-btn px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-base transition" data-amount="10000">10,000</button>
+<button class="bet-btn px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-base transition" data-amount="100000">100,000</button>
+<button class="bet-btn px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-base transition" data-amount="1000000">1,000,000</button>
+<input class="w-24 bg-slate-800 border border-slate-600 rounded px-2 py-2 text-base text-white focus:outline-none focus:border-cyan-500 text-center" id="custom-bet" placeholder="自定义" type="text" inputmode="numeric" pattern="[0-9]*"/>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-3">
+<button class="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-8 rounded-full shadow-lg shadow-purple-500/30 transition transform active:scale-95 flex items-center gap-2" disabled="" id="feed-btn">
+<i class="fa-solid fa-hand-holding-dollar"></i> 投喂
+                </button>
+<div class="h-8 w-px bg-slate-700 mx-2"></div>
+<button class="text-slate-400 hover:text-white transition p-2" id="history-btn" title="游戏记录">
+<i class="fa-solid fa-clock-rotate-left text-xl"></i>
+</button>
+<button class="text-slate-400 hover:text-white transition p-2" id="rank-btn" title="排行榜">
+<i class="fa-solid fa-trophy text-xl"></i>
+</button>
+<button class="text-slate-400 hover:text-white transition p-2" id="rules-btn" title="游戏规则">
+<i class="fa-solid fa-circle-question text-xl"></i>
+</button>
+</div>
+</div>
+</footer>
+<!-- Modals -->
+<!-- History Modal -->
+<div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="history-modal">
+<div class="bg-slate-800 border border-slate-600 rounded-xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl">
+<div class="p-4 border-b border-slate-700 flex justify-between items-center">
+<h3 class="text-xl font-bold text-white"><i class="fa-solid fa-clock-rotate-left mr-2 text-cyan-400"></i>游戏记录</h3>
+<button class="close-modal text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+</div>
+<div class="p-4 overflow-y-auto flex-1">
+<table class="w-full text-left text-sm">
+<thead class="text-slate-400 border-b border-slate-700">
+<tr>
+<th class="pb-2 w-20">时间</th>
+<th class="pb-2 text-left pl-2 w-32">被吃食物</th>
+<th class="pb-2 text-left pl-2 w-32">投喂食物</th>
+<th class="pb-2 text-right w-24">变化</th>
+</tr>
+</thead>
+<tbody class="text-slate-300" id="history-list">
+<!-- History items -->
+</tbody>
+</table>
+<div class="text-center text-slate-500 py-8 hidden" id="no-history">暂无记录</div>
+</div>
+</div>
+</div>
+<!-- Leaderboard Modal -->
+<div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="rank-modal">
+<div class="bg-slate-800 border border-slate-600 rounded-xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl">
+<div class="p-4 border-b border-slate-700 flex justify-between items-center">
+<h3 class="text-xl font-bold text-white"><i class="fa-solid fa-trophy mr-2 text-yellow-400"></i>排行榜</h3>
+<button class="close-modal text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+</div>
+<div class="p-4 overflow-y-auto flex-1">
+<!-- 切换按钮 -->
+<div class="flex gap-2 mb-4">
+<button id="btn-current-week" class="flex-1 py-2 px-4 rounded-lg bg-cyan-600 text-white font-bold text-sm transition hover:bg-cyan-500">
+今日排行
+</button>
+<button id="btn-last-week" class="flex-1 py-2 px-4 rounded-lg bg-slate-700 text-slate-400 font-bold text-sm transition hover:bg-slate-600">
+昨日排行
+</button>
+</div>
+<div class="text-xs text-slate-500 mb-2 flex justify-between">
+<span id="rank-period-info">今日投喂排名（实时更新）</span>
+<span>减伤基于昨日排名</span>
+</div>
+<table class="w-full text-left">
+<thead class="text-slate-400 border-b border-slate-700">
+<tr>
+<th class="pb-2 w-12">排名</th>
+<th class="pb-2">玩家</th>
+<th class="pb-2 text-right">投喂</th>
+<th class="pb-2 text-right">减伤</th>
+</tr>
+</thead>
+<tbody class="text-slate-300" id="rank-list">
+<!-- Rank items -->
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Rules Modal -->
+<div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="rules-modal">
+<div class="bg-slate-800 border border-slate-600 rounded-xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl">
+<div class="p-4 border-b border-slate-700 flex justify-between items-center">
+<h3 class="text-xl font-bold text-white"><i class="fa-solid fa-circle-question mr-2 text-cyan-400"></i>游戏规则</h3>
+<button class="close-modal text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+</div>
+<div class="p-4 overflow-y-auto flex-1 text-slate-300 space-y-4">
+<div>
+<h4 class="text-cyan-400 font-bold mb-2">🎮 游戏玩法</h4>
+<p class="text-sm">1. 连接钱包后开始游戏</p>
+<p class="text-sm">2. 选择一种食物并投喂</p>
+<p class="text-sm">3. 倒计时结束后黑蛙会醒来</p>
+<p class="text-sm">4. 黑蛙会沿着路线跳跃觅食</p>
+<p class="text-sm">5. 如果黑蛙吃了你选择的食物，你会损失投喂数量</p>
+<p class="text-sm">6. 如果黑蛙吃了其他食物，你将按比例获得奖励</p>
+</div>
+<div>
+<h4 class="text-cyan-400 font-bold mb-2">💰 奖励分配</h4>
+<p class="text-sm">• 被吃食物的90%作为奖励池</p>
+<p class="text-sm">• 2% 销毁</p>
+<p class="text-sm">• 8% 基金会</p>
+<p class="text-sm">• 按投喂比例分配奖励池</p>
+</div>
+<div>
+<h4 class="text-cyan-400 font-bold mb-2">🛡️ 减伤机制</h4>
+<p class="text-sm">根据总投喂排名获得损失减免：</p>
+<p class="text-sm">• 第1名：10% 减伤</p>
+<p class="text-sm">• 第2-5名：5% 减伤</p>
+<p class="text-sm">• 第6-10名：3% 减伤</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Wallet Modal - 真实钱包连接 -->
+<div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="wallet-modal">
+<div class="bg-slate-800 border border-slate-600 rounded-xl w-full max-w-md flex flex-col shadow-2xl">
+<div class="p-4 border-b border-slate-700 flex justify-between items-center">
+<h3 class="text-xl font-bold text-white"><i class="fa-solid fa-wallet mr-2 text-cyan-400"></i>连接钱包</h3>
+<button class="close-modal text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+</div>
+<div class="p-4 space-y-4">
+<div class="bg-slate-700/50 rounded-lg p-3">
+<div class="flex justify-between items-center text-sm">
+<span class="text-slate-400">钱包地址</span>
+<span class="text-cyan-400 font-mono" id="wallet-address">-</span>
+</div>
+<div class="flex justify-between items-center text-sm mt-2">
+<span class="text-slate-400">网络</span>
+<span class="text-green-400" id="wallet-network">X Layer Testnet</span>
+</div>
+</div>
+<div class="bg-slate-700/50 rounded-lg p-3">
+<div class="flex justify-between items-center">
+<span class="text-slate-400">钱包余额</span>
+<span class="text-yellow-400 font-bold" id="wallet-balance">0 OEOE</span>
+</div>
+<div class="flex justify-between items-center mt-2">
+<span class="text-slate-400">游戏余额</span>
+<span class="text-yellow-400 font-bold" id="game-balance">0 OEOE</span>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2" id="deposit-btn">
+<i class="fa-solid fa-arrow-down"></i> 存入
+</button>
+<button class="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold py-2 px-4 rounded-lg transition flex items-center justify-center gap-2" id="withdraw-btn">
+<i class="fa-solid fa-arrow-up"></i> 提取
+</button>
+</div>
+<button class="w-full bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-bold py-2 px-4 rounded-lg transition" id="disconnect-wallet-btn" onclick="disconnectWallet()">
+断开连接
+</button>
+</div>
+</div>
+</div>
+<!-- Deposit Modal -->
+<div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="deposit-modal">
+<div class="bg-slate-800 border border-slate-600 rounded-xl w-full max-w-md flex flex-col shadow-2xl">
+<div class="p-4 border-b border-slate-700 flex justify-between items-center">
+<h3 class="text-xl font-bold text-white"><i class="fa-solid fa-arrow-down mr-2 text-green-400"></i>存入游戏</h3>
+<button class="close-modal text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+</div>
+<div class="p-4 space-y-4">
+<div class="text-sm text-slate-400">将 OEOE 代币存入游戏合约用于投喂</div>
+<div class="flex gap-2 flex-wrap">
+<button class="deposit-quick-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-sm transition" data-amount="10000">10,000</button>
+<button class="deposit-quick-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-sm transition" data-amount="100000">100,000</button>
+<button class="deposit-quick-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-sm transition" data-amount="1000000">1,000,000</button>
+<button class="deposit-all-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-sm transition" id="deposit-all-btn">全部存入</button>
+</div>
+<input class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-base text-white focus:outline-none focus:border-cyan-500" id="deposit-amount" placeholder="输入" type="text" inputmode="numeric"/>
+<div class="text-xs text-slate-500">可用余额: <span class="text-yellow-400" id="deposit-avail">0</span> OEOE</div>
+<button class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-3 px-4 rounded-lg transition" id="confirm-deposit-btn">
+确认存入
+</button>
+</div>
+</div>
+</div>
+<!-- Withdraw Modal -->
+<div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" id="withdraw-modal">
+<div class="bg-slate-800 border border-slate-600 rounded-xl w-full max-w-md flex flex-col shadow-2xl">
+<div class="p-4 border-b border-slate-700 flex justify-between items-center">
+<h3 class="text-xl font-bold text-white"><i class="fa-solid fa-arrow-up mr-2 text-orange-400"></i>从游戏提取</h3>
+<button class="close-modal text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+</div>
+<div class="p-4 space-y-4">
+<div class="text-sm text-slate-400">从游戏合约提取 OEOE 代币到钱包</div>
+<div class="flex gap-2 flex-wrap">
+<button class="withdraw-quick-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-sm transition" data-amount="10000">10,000</button>
+<button class="withdraw-quick-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-sm transition" data-amount="100000">100,000</button>
+<button class="withdraw-quick-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-sm transition" data-amount="1000000">1,000,000</button>
+<button class="withdraw-all-btn px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-sm transition" id="withdraw-all-btn">全部提取</button>
+</div>
+<input class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-base text-white focus:outline-none focus:border-cyan-500" id="withdraw-amount" placeholder="输入" type="text" inputmode="numeric"/>
+<div class="text-xs text-slate-500">游戏余额: <span class="text-yellow-400" id="withdraw-avail">0</span> OEOE</div>
+<button class="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold py-3 px-4 rounded-lg transition" id="confirm-withdraw-btn">
+确认提取
+</button>
+</div>
+</div>
+</div>
+
+<script src="config.js"></script>
+<script>
+        /**
+         * Game Configuration & State
+         * 从 config.js 加载配置，支持动态更新
+         */
+        
+        // DOM Elements - 必须先定义，因为后续错误处理可能用到
+        const els = {
+            walletBtn: document.getElementById('connect-wallet-btn'),
+            walletSection: document.getElementById('wallet-section'),
+            balanceDisplay: document.getElementById('balance-display'),
+            foodGrid: document.getElementById('food-grid'),
+            betBtns: document.querySelectorAll('.bet-btn'),
+            customBetInput: document.getElementById('custom-bet'),
+            feedBtn: document.getElementById('feed-btn'),
+            timerDisplay: document.getElementById('timer-display'),
+            frogContainer: document.getElementById('frog-container'),
+            frogImg: document.getElementById('frog-img'),
+            statusText: document.getElementById('status-text'),
+            historyBtn: document.getElementById('history-btn'),
+            rankBtn: document.getElementById('rank-btn'),
+            rulesBtn: document.getElementById('rules-btn'),
+            historyModal: document.getElementById('history-modal'),
+            rankModal: document.getElementById('rank-modal'),
+            rulesModal: document.getElementById('rules-modal'),
+            closeModals: document.querySelectorAll('.close-modal'),
+            historyList: document.getElementById('history-list'),
+            rankList: document.getElementById('rank-list'),
+            volumeBtn: document.getElementById('volume-btn'),
+            musicBtn: document.getElementById('music-btn'),
+            toastContainer: document.getElementById('toast-container')
         };
 
-        STATE.ws.onmessage = (event) => {
-            try {
-                const { type, data } = JSON.parse(event.data);
-                if (type === 'round-started') {
-                    STATE.roundId = data.roundId;
-                    STATE.phase = 'BETTING';
-                    STATE.timeLeft = data.endTime - Math.floor(Date.now() / 1000);
-                    STATE.foodBets = [0,0,0,0,0,0,0,0];
-                    STATE.selectedFood = null;
-                    document.getElementById('status-text').textContent = '选择食物并下注！';
-                    renderFoodGrid();
-                    updateFeedButton();
-                }
-                if (type === 'bets-updated' && data.foodBets) {
-                    STATE.foodBets = data.foodBets;
-                    renderFoodGrid();
-                }
-                if (type === 'round-settled') {
-                    STATE.phase = 'SETTLING';
-                    handleSettlement(data);
-                }
-                if (type === 'balance-updated' && data.player === STATE.userAddress?.toLowerCase()) {
-                    STATE.balance = data.balance;
-                    document.getElementById('balance-display').textContent = formatNumber(STATE.balance);
-                }
-            } catch (e) {}
+        // 使用 GAME_CONFIG（必须已加载 config.js）
+        const CONFIG = window.GAME_CONFIG ? {
+            tokenAddress: window.GAME_CONFIG.contracts.token,
+            gameContract: window.GAME_CONFIG.contracts.game,
+            burnAddress: window.GAME_CONFIG.contracts.burn,
+            devAddress: window.GAME_CONFIG.contracts.dev,
+            foods: window.GAME_CONFIG.game.foods,
+            countdownTime: window.GAME_CONFIG.game.roundDuration,
+            bossAppearTime: 3,
+            tokenDecimals: window.GAME_CONFIG.token?.decimals || 9  // 从 config.js 加载
+        } : (() => {
+            console.error('❌ GAME_CONFIG 未加载，请确保 config.js 已正确引入');
+            showToast('配置加载失败，请刷新页面', 'error');
+            throw new Error('GAME_CONFIG not loaded');
+        })();
+
+        // 代币格式化辅助函数
+        function formatToken(amount) {
+            return ethers.formatUnits(amount, CONFIG.tokenDecimals);
+        }
+
+        function parseToken(amount) {
+            return ethers.parseUnits(amount.toString(), CONFIG.tokenDecimals);
+        }
+
+        // [FIX-F04] sessionToken 闭包封装，防止第三方脚本访问
+        const SessionStore = (() => {
+            let _token = null;
+            return {
+                set: (t) => { _token = t; },
+                get: () => _token,
+                clear: () => { _token = null; }
+            };
+        })();
+
+        const STATE = {
+            walletConnected: false,
+            userAddress: null,
+            balance: 0,
+            selectedBet: 1000,
+            selectedFoodIndex: -1,
+            foodBets: [0, 0, 0, 0, 0, 0, 0, 0],
+            userBetsOnFood: [0, 0, 0, 0, 0, 0, 0, 0],
+            gameState: 'IDLE',
+            phase: 'IDLE',
+            hasBetInCurrentRound: false, // 本轮是否已投喂
+            timer: null,
+            timeLeft: 0,
+            history: [],
+            totalUserInvested: 0,
+            lastFeedClickAt: 0,
+            volume: 0.5,
+            isMuted: false,
+            isMusicOn: true,
+            mockPlayers: [],
+            targetFoodIndex: -1,
+            frogPosition: { x: 0, y: 0 },
+            isJumping: false
         };
 
-        STATE.ws.onclose = () => { setTimeout(connectWebSocket, 3000); };
-    }
+        // Food positions for path calculation (snake pattern: 0→1→2→3→7→6→5→4)
+        const FOOD_PATH = [0, 1, 2, 3, 7, 6, 5, 4];
 
-    function handleSettlement(data) {
-        const { winningFood, isNoContest, playerResults } = data;
-        document.getElementById('status-text').textContent = isNoContest
-            ? `无竞争局 — 全额返还。青蛙吃了 ${FOODS[winningFood]?.emoji || '?'}`
-            : `青蛙吃了 ${FOODS[winningFood]?.emoji || '?'}！`;
+        /**
+         * Frog Animation System
+         */
+        const frogImg = els.frogImg;
+        let frogAnimationId = null;
+        let frogState = 'sleeping'; // sleeping, idle, jumping, eating
+        let frogFrame = 0;
+        let frogDirection = 1; // 1 = right, -1 = left
+        let frogJumpOffset = 0;
 
-        // Highlight cards
-        document.querySelectorAll('.food-card').forEach(card => {
-            const idx = parseInt(card.dataset.index);
-            card.classList.remove('selected');
-            if (idx === winningFood) card.classList.add('eaten');
-            else card.classList.add('winner');
-        });
-
-        // Show player result
-        if (playerResults && STATE.userAddress) {
-            const result = playerResults[STATE.userAddress.toLowerCase()];
-            if (result) {
-                if (result.result === 'win') showToast(`🎉 赢了 ${formatNumber(result.changeAmount)} OEOE！`, 'success');
-                else showToast(`😢 输了 ${formatNumber(Math.abs(result.changeAmount))} OEOE`, 'error');
-            }
+        function drawZzz() {
+            frogFrame++;
+            frogAnimationId = requestAnimationFrame(drawZzz);
         }
-        updateFeedButton();
-    }
 
-    // ==================== Deposit & Withdraw ====================
-    async function depositOEOE() {
-        if (!STATE.walletConnected) return;
-        const amount = prompt('请输入存入金额 (OEOE):');
-        if (!amount || isNaN(amount) || Number(amount) <= 0) return;
-        try {
-            showToast('正在处理存入...', 'info');
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            const signer = await provider.getSigner();
-            const tokenContract = new ethers.Contract(STATE.config.contracts.token, [
-                'function approve(address,uint256) returns (bool)',
-                'function allowance(address,address) view returns (uint256)'
-            ], signer);
-            const amountWei = ethers.parseUnits(amount, 9);
-            const allowance = await tokenContract.allowance(STATE.userAddress, STATE.config.contracts.game);
-            if (allowance < amountWei) {
-                showToast('请在钱包中确认授权...', 'info');
-                const approveTx = await tokenContract.approve(STATE.config.contracts.game, amountWei);
-                await approveTx.wait();
-                showToast('授权成功！正在存入...', 'info');
-            }
-            const gameContract = new ethers.Contract(STATE.config.contracts.game, ['function deposit(uint256)'], signer);
-            const depositTx = await gameContract.deposit(amountWei);
-            const receipt = await depositTx.wait();
-            await fetch(`${SERVER_URL}/api/deposit`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ player: STATE.userAddress, amount: amount, txHash: receipt.hash })
-            });
-            showToast(`成功存入 ${amount} OEOE！`, 'success');
-        } catch (err) {
-            showToast('存入失败: ' + (err.reason || err.message), 'error');
-        }
-    }
-
-    async function withdrawOEOE() {
-        if (!STATE.walletConnected) return;
-        const amount = prompt('请输入提取金额 (OEOE):');
-        if (!amount || isNaN(amount) || Number(amount) <= 0) return;
-        try {
-            showToast('正在处理提取...', 'info');
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            const signer = await provider.getSigner();
-            const gameContract = new ethers.Contract(STATE.config.contracts.game, ['function withdraw(uint256)'], signer);
-            const amountWei = ethers.parseUnits(amount, 9);
-            const withdrawTx = await gameContract.withdraw(amountWei);
-            const receipt = await withdrawTx.wait();
-            await fetch(`${SERVER_URL}/api/withdraw`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ player: STATE.userAddress, amount: amount, txHash: receipt.hash, token: STATE.sessionToken })
-            });
-            showToast(`成功提取 ${amount} OEOE！`, 'success');
-        } catch (err) {
-            showToast('提取失败: ' + (err.reason || err.message), 'error');
-        }
-    }
-
-    // ==================== Betting ====================
-    async function placeBet() {
-        if (!STATE.walletConnected || STATE.selectedFood === null || STATE.betAmount <= 0) return;
-        const btn = document.getElementById('feed-btn');
-        btn.disabled = true;
-        try {
-            const res = await fetch(`${SERVER_URL}/api/bet`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ player: STATE.userAddress, foodIndex: STATE.selectedFood, amount: STATE.betAmount, nonce: Date.now() })
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast(`投注 ${formatNumber(STATE.betAmount)} 在 ${FOODS[STATE.selectedFood].emoji}`, 'success');
+        function updateFrogVisuals() {
+            let scaleY = 1;
+            let rotate = 0;
+            let scaleX = frogDirection;
+            
+            if (frogState === 'sleeping') {
+                // 缓慢呼吸
+                scaleY = 1 + Math.sin(frogFrame * 0.05) * 0.03;
+            } else if (frogState === 'jumping') {
+                // 跳跃时身体微微压缩再拉伸（弹跳感）
+                const jumpPhase = (frogFrame % 8) / 8;
+                frogJumpOffset = -Math.abs(Math.sin(frogFrame * 0.3)) * 30;
+                scaleY = jumpPhase < 0.3 ? 0.85 : (jumpPhase < 0.6 ? 1.15 : 1.0);
+                rotate = 0;
+            } else if (frogState === 'eating') {
+                // 吃食物：激烈摇晃 + 缩放（"大口吞下"效果）
+                rotate = Math.sin(frogFrame * 0.5) * 20;
+                scaleY = 1 + Math.sin(frogFrame * 0.6) * 0.18;
+                scaleX = frogDirection * (1 + Math.sin(frogFrame * 0.4) * 0.12);
+            } else if (frogState === 'win') {
+                // 胜利：欢快连续跳动 + 旋转，充满活力
+                frogJumpOffset = -Math.abs(Math.sin(frogFrame * 0.35)) * 28;
+                rotate = Math.sin(frogFrame * 0.3) * 12;
+                scaleY = 1 + Math.sin(frogFrame * 0.4) * 0.12;
+                scaleX = frogDirection * (1 + Math.cos(frogFrame * 0.3) * 0.08);
+            } else if (frogState === 'lose') {
+                // 失败：垂头丧气，沉重下沉 + 轻微颤抖
+                frogJumpOffset = Math.abs(Math.sin(frogFrame * 0.05)) * 5;  // 轻微下沉
+                rotate = Math.sin(frogFrame * 0.5) * 3;                      // 微微颤抖
+                scaleY = 0.88 + Math.sin(frogFrame * 0.08) * 0.02;          // 被压扁，无精打采
+                scaleX = frogDirection * (1.08 + Math.sin(frogFrame * 0.1) * 0.02); // 横向稍宽
             } else {
-                showToast(data.error || '投注失败', 'error');
+                // idle：轻微呼吸
+                scaleY = 1 + Math.sin(frogFrame * 0.08) * 0.02;
             }
-        } catch (err) {
-            showToast('投注失败: ' + err.message, 'error');
+            
+            const transform = `scaleX(${scaleX}) scaleY(${scaleY}) rotate(${rotate}deg) translateY(${frogJumpOffset}px)`;
+            frogImg.style.transform = transform;
         }
-        updateFeedButton();
-    }
 
-    // ==================== Timer ====================
-    function updateTimer() {
-        const now = Math.floor(Date.now() / 1000);
-        if (STATE.phase === 'BETTING' && STATE.roundId > 0) {
-            // Calculate from game state
+        function setFrogState(state) {
+            frogState = state;
+            frogFrame = 0;
+            frogJumpOffset = 0;
         }
-        const display = document.getElementById('timer-display');
-        const roundDisplay = document.getElementById('round-display');
-        roundDisplay.textContent = `#${STATE.roundId}`;
 
-        if (STATE.timeLeft > 0) {
-            display.textContent = STATE.timeLeft;
-            display.style.color = STATE.timeLeft <= 5 ? '#ef4444' : STATE.timeLeft <= 15 ? '#f59e0b' : '#22d3ee';
-        } else {
-            display.textContent = STATE.phase === 'SETTLING' ? '🐸' : '-';
+        function setFrogPosition(x, y) {
+            const mainRect = document.querySelector('main').getBoundingClientRect();
+            els.frogContainer.style.left = (x) + 'px';
+            els.frogContainer.style.top = (y) + 'px';
+            els.frogContainer.style.bottom = 'auto';
+            els.frogContainer.style.transform = 'translate(-50%, -50%)';
         }
-    }
 
-    // ==================== Init ====================
-    async function init() {
-        // Load config (contract addresses)
-        try {
-            const configRes = await fetch(`${SERVER_URL}/api/config`);
-            STATE.config = await configRes.json();
-        } catch (e) { console.error('Failed to load config:', e); }
+        function setFrogDirection(direction) {
+            frogDirection = direction;
+        }
 
-        renderFoodGrid();
-
-        // Bet buttons
-        document.querySelectorAll('.bet-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                STATE.betAmount = parseInt(btn.dataset.amount);
-                document.getElementById('custom-bet').value = '';
-                updateFeedButton();
+        /**
+         * Background Music System - 使用外部音频源
+         */
+        let bgMusic = null;
+        let bgMusicStarted = false;
+        
+        // 使用同目录下的 frog.mp3 作为背景音乐
+        const MUSIC_URL = 'frog.mp3';
+        
+        function initBackgroundMusic() {
+            // 创建音频元素
+            bgMusic = new Audio(MUSIC_URL);
+            bgMusic.loop = true;
+            bgMusic.volume = 0.15;
+            bgMusic.preload = 'auto';
+            
+            // 监听音频加载完成
+            bgMusic.addEventListener('canplaythrough', () => {
+                console.log('背景音乐加载完成');
             });
-        });
+            
+            // 监听错误
+            bgMusic.addEventListener('error', (e) => {
+                console.error('背景音乐加载失败:', e);
+                // 如果外部音频失败，回退到内置音效
+                fallbackToGeneratedMusic();
+            });
+        }
 
-        document.getElementById('custom-bet').addEventListener('input', (e) => {
-            const val = parseInt(e.target.value);
-            if (!isNaN(val) && val > 0) {
-                STATE.betAmount = val;
-                document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
+        function startBackgroundMusic() {
+            if (bgMusicStarted || STATE.isMuted || !STATE.isMusicOn) return;
+            bgMusicStarted = true;
+            
+            if (bgMusic) {
+                bgMusic.play().catch(err => {
+                    console.log('自动播放被阻止，等待用户交互:', err);
+                    bgMusicStarted = false;
+                });
             }
-            updateFeedButton();
-        });
+        }
+        
+        function stopBackgroundMusic() {
+            if (bgMusic) {
+                bgMusic.pause();
+                bgMusic.currentTime = 0;
+            }
+            bgMusicStarted = false;
+        }
+        
+        // 如果外部音频失败，回退到程序生成音乐
+        function fallbackToGeneratedMusic() {
+            console.log('使用程序生成音乐作为回退');
+            const musicNotes = [
+                { freq: 349.23, duration: 0.8, type: 'sine', vol: 0.08 },
+                { freq: 392.00, duration: 0.8, type: 'sine', vol: 0.08 },
+                { freq: 440.00, duration: 1.2, type: 'sine', vol: 0.08 },
+                { freq: 0, duration: 0.4, type: 'sine', vol: 0 },
+                { freq: 392.00, duration: 0.6, type: 'sine', vol: 0.08 },
+                { freq: 349.23, duration: 0.6, type: 'sine', vol: 0.08 },
+                { freq: 329.63, duration: 1.5, type: 'sine', vol: 0.08 },
+                { freq: 0, duration: 0.5, type: 'sine', vol: 0 },
+            ];
+            
+            let noteIndex = 0;
+            
+            function playNextNote() {
+                if (!bgMusicStarted || STATE.isMuted) return;
+                
+                const note = musicNotes[noteIndex];
+                if (note.freq > 0) {
+                    playTone(note.freq, note.type || 'sine', note.duration, note.vol || 0.08);
+                }
+                
+                noteIndex = (noteIndex + 1) % musicNotes.length;
+                setTimeout(playNextNote, note.duration * 1000);
+            }
+            
+            playNextNote();
+        }
 
-        document.getElementById('feed-btn').addEventListener('click', placeBet);
-        document.getElementById('connect-btn').addEventListener('click', connectWallet);
-        document.getElementById('disconnect-btn').addEventListener('click', disconnectWallet);
-        document.getElementById('deposit-btn').addEventListener('click', depositOEOE);
-        document.getElementById('withdraw-btn').addEventListener('click', withdrawOEOE);
+        /**
+         * Audio System (Web Audio API)
+         */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
 
-        // Load game state
-        try {
-            const res = await fetch(`${SERVER_URL}/api/game-state`);
-            const gs = await res.json();
-            STATE.roundId = gs.roundId;
-            STATE.phase = gs.phase || gs.state;
-            STATE.timeLeft = gs.timeLeft;
-            updateTimer();
-        } catch (e) {}
+        function playTone(freq, type, duration, vol = 1) {
+            if (STATE.isMuted) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
 
-        // Load bets
-        try {
-            const res = await fetch(`${SERVER_URL}/api/round-bets`);
-            const data = await res.json();
-            STATE.foodBets = data.foodBets || [0,0,0,0,0,0,0,0];
-            renderFoodGrid();
-        } catch (e) {}
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
 
-        // Timer update
-        setInterval(() => {
-            if (STATE.timeLeft > 0) STATE.timeLeft--;
-            updateTimer();
-        }, 1000);
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(STATE.volume * vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
 
-        // Periodic game state sync
-        setInterval(async () => {
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // 噪声脉冲：用于咀嚼/嘎吱声（白噪声 burst）
+        function playNoiseBurst(duration, vol = 0.3) {
+            if (STATE.isMuted) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const bufferSize = audioCtx.sampleRate * duration;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1) * 0.5;
+            }
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            // 带通滤波让噪声更像咀嚼
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 800;
+            filter.Q.value = 2;
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(STATE.volume * vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            source.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            source.start();
+        }
+
+        const SFX = {
+            // 选择食物
+            select: () => playTone(600, 'sine', 0.1, 0.5),
+            
+            // 投喂确认
+            bet: () => {
+                playTone(1000, 'triangle', 0.05, 0.7);
+                setTimeout(() => playTone(1300, 'triangle', 0.08, 0.5), 40);
+                setTimeout(() => playTone(900, 'sine', 0.12, 0.3), 80);
+            },
+            
+            // 青蛙跳跃
+            jump: () => {
+                playTone(220, 'sine', 0.08, 0.5);
+                setTimeout(() => playTone(350, 'sine', 0.06, 0.3), 60);
+            },
+            
+            // 青蛙吃食物：播放 eating.mp3（预加载）
+            eat: (() => {
+                let eatAudio = null;
+                try { eatAudio = new Audio('eating.mp3'); eatAudio.preload = 'auto'; } catch(e) {}
+                return () => {
+                    if (STATE.isMuted || !eatAudio) return;
+                    eatAudio.volume = Math.min(STATE.volume, 0.8);
+                    eatAudio.currentTime = 0;
+                    eatAudio.play().catch(e => console.warn('eating.mp3 播放失败:', e.message));
+                };
+            })(),
+            
+            // 胜利：欢快金币 + 上行大调旋律
+            win: () => {
+                // 金币叮叮
+                playTone(1800, 'sine', 0.04, 0.5);
+                setTimeout(() => playTone(2200, 'sine', 0.04, 0.4), 60);
+                // C-E-G-C 上行四音（大调和弦分解，欢快感）
+                setTimeout(() => playTone(523, 'sine', 0.1, 0.7), 150);
+                setTimeout(() => playTone(659, 'sine', 0.1, 0.7), 280);
+                setTimeout(() => playTone(784, 'sine', 0.12, 0.75), 410);
+                setTimeout(() => playTone(1047, 'sine', 0.18, 0.85), 550);
+                // 尾音和弦（C+E+G 同时响，辉煌感）
+                setTimeout(() => {
+                    playTone(784, 'sine', 0.2, 0.35);
+                    playTone(1047, 'sine', 0.2, 0.4);
+                }, 750);
+            },
+            
+            // 失败：下行半音 + 低沉叹息
+            lose: () => {
+                // E4→C#4→B3 下行三音（小调色彩，沮丧感）
+                playTone(330, 'triangle', 0.15, 0.6);
+                setTimeout(() => playTone(277, 'triangle', 0.18, 0.65), 220);
+                setTimeout(() => playTone(247, 'triangle', 0.22, 0.7), 460);
+                // 低频叹息
+                setTimeout(() => playTone(80, 'sine', 0.25, 0.5), 650);
+            },
+            
+            noContest: () => { playTone(440, 'sine', 0.1, 0.5); setTimeout(() => playTone(440, 'sine', 0.15, 0.3), 150); },
+            tick: () => playTone(800, 'sine', 0.05, 0.3),
+            coin: () => { playTone(1200, 'sine', 0.05, 0.8); setTimeout(() => playTone(1800, 'sine', 0.08, 0.6), 30); setTimeout(() => playTone(2400, 'sine', 0.1, 0.4), 60); },
+            roundStart: () => { playTone(440, 'sine', 0.08, 0.5); setTimeout(() => playTone(550, 'sine', 0.08, 0.4), 100); setTimeout(() => playTone(660, 'sine', 0.1, 0.5), 200); }
+        };
+
+
+
+        /**
+         * Initialization & Helper Functions
+         */
+        async function init() {
+            // 加载服务器配置（获取合约地址）
+            if (typeof loadServerConfig === 'function') {
+                await loadServerConfig();
+                console.log('✅ 配置已加载:', window.GAME_CONFIG?.contracts);
+            }
+            
+            renderFoods();
+            updateUI();
+            
+            // Start frog animation
+            drawZzz();
+            setInterval(updateFrogVisuals, 50);
+            
+            // Position frog at bottom center initially
+            resetFrogPosition();
+            
+            // 初始化背景音乐系统
+            initBackgroundMusic();
+            
+            // 尝试启动背景音乐（需要用户交互才能自动播放）
+            // 页面加载后，监听第一次用户交互来启动音乐
+            const startMusicOnInteraction = () => {
+                console.log('用户交互 detected，启动背景音乐');
+                startBackgroundMusic();
+                // 移除事件监听器，只触发一次
+                document.removeEventListener('click', startMusicOnInteraction);
+                document.removeEventListener('touchstart', startMusicOnInteraction);
+                document.removeEventListener('keydown', startMusicOnInteraction);
+            };
+            document.addEventListener('click', startMusicOnInteraction);
+            document.addEventListener('touchstart', startMusicOnInteraction);
+            document.addEventListener('keydown', startMusicOnInteraction);
+            
+            // 启动服务器状态同步（页面加载时就启动）
+            startServerPolling();
+            
+            // 切回前台时立即刷新余额和游戏状态
+            document.addEventListener('visibilitychange', async () => {
+                if (!document.hidden && STATE.walletConnected) {
+                    console.log('🔄 页面回到前台，刷新状态...');
+                    await syncGameStateOnce();
+                    await updateWalletBalances().catch(() => {});
+                    if (!ws || ws.readyState !== 1) {
+                        connectWebSocket();
+                    }
+                }
+            });
+            
+            // 包装函数，用于在函数覆盖后仍能正确调用
+            function handleWalletClick() {
+                // 延迟调用确保函数已定义
+                setTimeout(() => {
+                    if (typeof window.connectRealWallet === 'function') {
+                        window.connectRealWallet();
+                    } else if (typeof window.connectWallet === 'function') {
+                        window.connectWallet();
+                    }
+                }, 0);
+            }
+            
+            function handleFeedClick() {
+                // 延迟调用确保 placeBet 已定义
+                setTimeout(() => window.placeBet && window.placeBet(), 0);
+            }
+            
+            // Event Listeners
+            els.walletBtn.addEventListener('click', handleWalletClick);
+            els.feedBtn.addEventListener('click', handleFeedClick);
+            els.betBtns.forEach(btn => btn.addEventListener('click', () => {
+                SFX.coin();
+                const amount = parseInt(btn.dataset.amount);
+                // 如果点击的是已选中的按钮，则取消选中
+                if (STATE.selectedBet === amount) {
+                    STATE.selectedBet = 0;
+                    els.betBtns.forEach(b => {
+                        b.classList.remove('bg-cyan-600', 'border-cyan-400');
+                        b.classList.add('bg-slate-800', 'border-slate-600');
+                    });
+                    updateUI();
+                } else {
+                    setBetAmount(amount);
+                }
+            }));
+            els.customBetInput.addEventListener('focus', () => {
+                // 点击自定义输入框时，取消固定按钮的选中状态
+                els.betBtns.forEach(btn => {
+                    btn.classList.remove('bg-cyan-600', 'border-cyan-400');
+                    btn.classList.add('bg-slate-800', 'border-slate-600');
+                });
+            });
+            els.customBetInput.addEventListener('input', (e) => {
+                let value = parseInt(e.target.value);
+                // 限制最大值为 9000000 (900万) — 超过此值 Wei 转换会超出 Number.MAX_SAFE_INTEGER
+                if (value > 9000000) {
+                    value = 9000000;
+                    e.target.value = value;
+                }
+                setBetAmount(value);
+            });
+            els.historyBtn.addEventListener('click', () => toggleModal(els.historyModal, true));
+            els.rankBtn.addEventListener('click', () => toggleModal(els.rankModal, true));
+            els.rulesBtn.addEventListener('click', () => toggleModal(els.rulesModal, true));
+            els.closeModals.forEach(btn => btn.addEventListener('click', (e) => toggleModal(e.target.closest('.fixed'), false)));
+            els.volumeBtn.addEventListener('click', toggleVolume);
+            if (els.musicBtn) {
+                els.musicBtn.addEventListener('click', toggleMusic);
+            }
+            
+            // 初始化排行榜切换按钮
+            setupLeaderboardToggle();
+            
+            // 存入/提取按钮事件
+            const depositBtn = document.getElementById('deposit-btn');
+            const withdrawBtn = document.getElementById('withdraw-btn');
+            const headerDepositBtn = document.getElementById('header-deposit-btn');
+            const headerWithdrawBtn = document.getElementById('header-withdraw-btn');
+            const confirmDepositBtn = document.getElementById('confirm-deposit-btn');
+            const confirmWithdrawBtn = document.getElementById('confirm-withdraw-btn');
+            
+            if (depositBtn) depositBtn.addEventListener('click', () => openDepositModal());
+            if (withdrawBtn) withdrawBtn.addEventListener('click', async () => { await openWithdrawModal(); });
+            if (headerDepositBtn) headerDepositBtn.addEventListener('click', () => openDepositModal());
+            if (headerWithdrawBtn) headerWithdrawBtn.addEventListener('click', async () => { await openWithdrawModal(); });
+            if (confirmDepositBtn) confirmDepositBtn.addEventListener('click', confirmDepositOptimized);
+            // 确认提取按钮 - 统一使用服务器代理提取
+            if (confirmWithdrawBtn) {
+                confirmWithdrawBtn.addEventListener('click', confirmWithdrawOptimized);
+            }
+            
+            // 快速金额按钮
+            document.querySelectorAll('.deposit-quick-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // 移除其他按钮的选中状态
+                    document.querySelectorAll('.deposit-quick-btn').forEach(b => b.classList.remove('selected'));
+                    document.getElementById('deposit-all-btn')?.classList.remove('selected');
+                    // 添加当前按钮选中状态
+                    btn.classList.add('selected');
+                    document.getElementById('deposit-amount').value = btn.dataset.amount;
+                });
+            });
+            document.querySelectorAll('.withdraw-quick-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // 移除其他按钮的选中状态
+                    document.querySelectorAll('.withdraw-quick-btn').forEach(b => b.classList.remove('selected'));
+                    document.getElementById('withdraw-all-btn').classList.remove('selected');
+                    // 添加当前按钮选中状态
+                    btn.classList.add('selected');
+                    document.getElementById('withdraw-amount').value = btn.dataset.amount;
+                });
+            });
+            
+            // 全部存入按钮
+            const depositAllBtn = document.getElementById('deposit-all-btn');
+            if (depositAllBtn) {
+                depositAllBtn.addEventListener('click', async () => {
+                    if (!window.tokenContract || !STATE.userAddress) {
+                        showToast('请先连接钱包', 'error');
+                        return;
+                    }
+                    try {
+                        const balance = await window.tokenContract.balanceOf(STATE.userAddress);
+                        const decimals = CONFIG.tokenDecimals;
+                        const formatted = ethers.formatUnits(balance, decimals);
+                        const amount = Math.floor(parseFloat(formatted));
+                        if (amount > 0) {
+                            document.getElementById('deposit-amount').value = amount;
+                            // 移除其他按钮选中状态
+                            document.querySelectorAll('.deposit-quick-btn').forEach(b => b.classList.remove('selected'));
+                            depositAllBtn.classList.add('selected');
+                            showToast(`已填入全部余额: ${formatNumber(amount)} OEOE`, 'info');
+                        } else {
+                            showToast('钱包余额为0', 'error');
+                        }
+                    } catch (err) {
+                        console.error('获取余额失败:', err);
+                        showToast('获取余额失败', 'error');
+                    }
+                });
+            }
+            
+            // 全部提取按钮 - 从链上提取（包含所有未提取的奖励）
+            const withdrawAllBtn = document.getElementById('withdraw-all-btn');
+            if (withdrawAllBtn) {
+                withdrawAllBtn.addEventListener('click', async () => {
+                    if (!STATE.userAddress) {
+                        showToast('请先连接钱包', 'error');
+                        return;
+                    }
+                    try {
+                        // 从链上获取余额（包含所有未提取的奖励，包括多次瓜分获胜的奖励）
+                        const chainBalance = await window.gameContract.playerBalances(STATE.userAddress);
+                        const chainBalanceOEOE = parseFloat(ethers.formatUnits(chainBalance, CONFIG.tokenDecimals));
+                        const chainBalanceInt = Math.floor(chainBalanceOEOE);
+                        
+                        if (chainBalanceInt > 0) {
+                            document.getElementById('withdraw-amount').value = chainBalanceInt;
+                            document.getElementById('withdraw-avail').innerText = formatNumber(chainBalanceInt);
+                            document.querySelectorAll('.withdraw-quick-btn').forEach(b => b.classList.remove('selected'));
+                            withdrawAllBtn.classList.add('selected');
+                            showToast(`已填入链上余额: ${formatNumber(chainBalanceInt)} OEOE（包含所有未提取奖励）`, 'info');
+                        } else {
+                            showToast('链上余额为0', 'error');
+                        }
+                    } catch (err) {
+                        console.error('获取链上余额失败:', err);
+                        showToast('获取链上余额失败，请稍后重试', 'error');
+                    }
+                });
+            }
+        }
+
+        // 打开存入模态框
+        function openDepositModal() {
+            if (!STATE.walletConnected) {
+                showToast('请先连接钱包', 'error');
+                return;
+            }
+            // 投喂状态禁止存入
+            if (STATE.hasBetInCurrentRound) {
+                showToast('您已在本轮投喂，结算前无法存入', 'warning');
+                return;
+            }
+            updateDepositAvailDisplay();
+            toggleModal(document.getElementById('deposit-modal'), true);
+        }
+        
+        // 打开提取模态框
+        async function openWithdrawModal() {
+            if (!STATE.walletConnected) {
+                showToast('请先连接钱包', 'error');
+                return;
+            }
+            // 投喂状态禁止提取
+            if (STATE.hasBetInCurrentRound) {
+                showToast('您已在本轮投喂，结算前无法提取', 'warning');
+                return;
+            }
+            
+            // [FIX-WITHDRAW] 先同步链上余额再打开弹窗，确保玩家看到的是链上真实余额
+            // await 保证弹窗打开时 withdraw-avail 已更新
+            await syncChainBalanceToServer();
+            
+            toggleModal(document.getElementById('withdraw-modal'), true);
+        }
+        
+        // 从链上同步余额到服务器数据库
+        async function syncChainBalanceToServer() {
+            if (!STATE.userAddress) return;
+            try {
+                showToast('同步余额中...', 'info');
+                const res = await fetch(`${SERVER_URL}/api/sync-balance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ player: STATE.userAddress, token: SessionStore.get() })
+                });
+                if (!res.ok) throw new Error('sync-balance HTTP ' + res.status);
+                const data = await res.json();
+                if (data.success && data.balance != null) {
+                    // data.balance 是 OEOE 浮点数（链上真实值）
+                    const oeoe = Math.floor(Number(data.balance));
+                    STATE.balance = oeoe;
+                    document.getElementById('balance-display').innerText = formatNumber(oeoe);
+                    document.getElementById('withdraw-avail').innerText = formatNumber(oeoe);
+                    console.log('[SYNC] 余额已同步:', oeoe, 'OEOE');
+                }
+            } catch (err) {
+                console.error('[SYNC] sync-balance 失败，直接查链上:', err.message);
+                // 降级：直接从链上读（绕过服务端，结算期间也能获取真实值）
+                try {
+                    const chainBalance = await window.gameContract.playerBalances(STATE.userAddress);
+                    const oeoe = Math.floor(parseFloat(ethers.formatUnits(chainBalance, CONFIG.tokenDecimals)));
+                    STATE.balance = oeoe;
+                    document.getElementById('balance-display').innerText = formatNumber(oeoe);
+                    document.getElementById('withdraw-avail').innerText = formatNumber(oeoe);
+                    console.log('[SYNC] 链上余额（降级）:', oeoe, 'OEOE');
+                } catch (e) {
+                    console.error('[SYNC] 链上查询也失败:', e);
+                    // 最终降级：保持当前 STATE.balance，只更新提取弹窗显示
+                    document.getElementById('withdraw-avail').innerText = formatNumber(STATE.balance || 0);
+                }
+            }
+        }
+        
+        // 更新存入可用余额显示
+        function updateDepositAvailDisplay() {
+            const availEl = document.getElementById('deposit-avail');
+            if (availEl && window.tokenContract && STATE.userAddress) {
+                window.tokenContract.balanceOf(STATE.userAddress).then(balance => {
+                    const decimals = CONFIG.tokenDecimals;
+                    const formatted = ethers.formatUnits(balance, decimals);
+                    availEl.innerText = formatNumber(parseInt(formatted));
+                }).catch(err => {
+                    console.error('获取代币余额失败:', err);
+                    availEl.innerText = '0';
+                });
+            }
+        }
+        
+        // 确认存入 - 优化版：预先授权 + 最小化等待
+        async function confirmDepositOptimized() {
+            const amountInput = document.getElementById('deposit-amount');
+            const amount = parseFloat(amountInput.value);
+            
+            if (!amount || amount <= 0) {
+                showToast('请输入有效金额', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('confirm-deposit-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 处理中...';
+            btn.disabled = true;
+            
+            try {
+                const decimals = CONFIG.tokenDecimals;
+                const amountWei = ethers.parseUnits(amount.toString(), decimals);
+                
+                // 检查授权额度
+                const allowance = await window.tokenContract.allowance(STATE.userAddress, CONFIG.gameContract);
+                
+                if (allowance < amountWei) {
+                    // === 连续弹 2 个钱包确认，不等链上 ===
+                    showToast('请在钱包中确认授权...', 'info');
+                    const approveTx = await window.tokenContract.approve(CONFIG.gameContract, amountWei);
+                    console.log('[DEPOSIT] 授权 tx 已发送:', approveTx.hash);
+                    
+                    // 不等授权确认，立即发送存入交易（钱包保证 nonce 顺序）
+                    showToast('请在钱包中确认存入...', 'info');
+                    const depositTx = await window.gameContract.deposit(amountWei);
+                    console.log('[DEPOSIT] 存入 tx 已发送:', depositTx.hash);
+                    
+                    // 两笔 tx 都已发送，关闭弹窗
+                    amountInput.value = '';
+                    toggleModal(document.getElementById('deposit-modal'), false);
+                    btn.innerHTML = '确认存入';
+                    btn.disabled = false;
+                    showToast('交易已提交，等待链上确认...', 'info');
+                    
+                    // 后台等待存入确认（授权会自动先完成）
+                    depositTx.wait().then(async (receipt) => {
+                        await _onDepositConfirmed(receipt, amount);
+                    }).catch(err => {
+                        showToast('存入失败: ' + (err.reason || err.message), 'error');
+                    });
+                    return;
+                }
+                
+                // 已有足够授权：直接存入
+                showToast('请在钱包中确认存入...', 'info');
+                const depositTx = await window.gameContract.deposit(amountWei);
+                console.log('[DEPOSIT] 存入 tx 已发送:', depositTx.hash);
+                
+                amountInput.value = '';
+                toggleModal(document.getElementById('deposit-modal'), false);
+                showToast('交易已提交，等待链上确认...', 'info');
+                
+                depositTx.wait().then(async (receipt) => {
+                    await _onDepositConfirmed(receipt, amount);
+                }).catch(err => {
+                    showToast('存入失败: ' + (err.reason || err.message), 'error');
+                });
+                
+            } catch (error) {
+                console.error('存入失败:', error);
+                const msg = error.message?.includes('rejected') ? '用户取消交易' : (error.reason || error.message);
+                showToast('存入失败: ' + msg, 'error');
+                toggleModal(document.getElementById('deposit-modal'), false);
+            } finally {
+                btn.innerHTML = '确认存入';
+                btn.disabled = false;
+            }
+        }
+
+        // 存入链上确认后的统一处理（供两条路径复用）
+        async function _onDepositConfirmed(receipt, amount) {
+            console.log('[DEPOSIT] 链上确认成功:', receipt.hash);
+            try {
+                const depositRes = await fetch(`${SERVER_URL}/api/deposit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        player: STATE.userAddress,
+                        amount: amount,
+                        txHash: receipt.hash,
+                        token: SessionStore.get()  // [SEC-03] 携带 session token
+                    })
+                });
+                if (depositRes.ok) {
+                    console.log('[DEPOSIT] 服务器已接收存入记录');
+                }
+            } catch (err) {
+                console.warn('[DEPOSIT] 服务器通知失败:', err.message);
+            }
+            await updateWalletBalances();
+            showToast(`成功存入 ${formatNumber(amount)} OEOE`, 'success');
+        }
+        
+        // 确认提取 - 前端直接调用合约提取
+        async function confirmWithdrawOptimized() {
+            const input = document.getElementById('withdraw-amount');
+            const amount = parseFloat(input.value);
+            
+            if (!amount || amount <= 0) { 
+                showToast('请输入有效金额', 'error'); 
+                return; 
+            }
+
+            const btn = document.getElementById('confirm-withdraw-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 处理中...';
+            btn.disabled = true;
+
+            try {
+                const amountWei = ethers.parseUnits(amount.toString(), CONFIG.tokenDecimals);
+                
+                showToast('请在钱包中确认提取交易...', 'info');
+                console.log('[WITHDRAW] 前端直接调用合约提取:', amount, 'OEOE');
+                
+                const tx = await window.gameContract.withdraw(amountWei);
+                console.log('[WITHDRAW] 交易已发送:', tx.hash);
+                
+                showToast('等待链上确认...', 'info');
+                const receipt = await tx.wait();
+                
+                if (receipt.status === 1) {
+                    console.log('[WITHDRAW] 提取成功:', receipt.hash);
+                    
+                    // 通知服务器记录提取并扣除余额
+                    try {
+                        const syncRes = await fetch(`${SERVER_URL}/api/withdraw`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                player: STATE.userAddress,
+                                amount: amount,
+                                txHash: receipt.hash,
+                                token: SessionStore.get()  // [SEC-06] 携带 session token
+                            })
+                        });
+                        const syncData = await syncRes.json();
+                        if (syncData.success) {
+                            console.log('[WITHDRAW] 服务器余额同步成功');
+                        } else {
+                            console.warn('[WITHDRAW] 服务器同步返回:', syncData);
+                        }
+                    } catch (e) {
+                        console.warn('[WITHDRAW] 通知服务器失败:', e);
+                    }
+                    
+                    showToast(`提取成功！${formatNumber(amount)} OEOE 已转入您的钱包`, 'success');
+                    
+                    input.value = '';
+                    // [FIX-BALANCE] 不本地减余额，直接从服务器同步（服务器 /api/withdraw 已扣除）
+                    setTimeout(async () => {
+                        await updateWalletBalances();
+                    }, 500);
+                    toggleModal(document.getElementById('withdraw-modal'), false);
+                } else {
+                    showToast('链上交易失败', 'error');
+                }
+            } catch (error) {
+                console.error('[WITHDRAW] 提取失败:', error);
+                let errorMsg = '提取失败';
+                if (error.reason) {
+                    errorMsg = error.reason;
+                } else if (error.message.includes('insufficient funds')) {
+                    errorMsg = '余额不足';
+                } else if (error.message.includes('user rejected') || error.message.includes('rejected')) {
+                    errorMsg = '用户取消交易';
+                } else if (error.message.includes('insufficient balance')) {
+                    errorMsg = '合约余额不足';
+                }
+                showToast(errorMsg, 'error');
+            } finally {
+                btn.innerHTML = '确认提取';
+                btn.disabled = false;
+            }
+        }
+        
+        // 确认存入 - 旧版（保留作为fallback）
+        async function confirmDeposit() {
+            const amountInput = document.getElementById('deposit-amount');
+            const amount = parseInt(amountInput.value);
+            
+            if (!amount || amount <= 0) {
+                showToast('请输入有效金额', 'error');
+                return;
+            }
+            
+            try {
+                showToast('正在存入...', 'info');
+                const decimals = CONFIG.tokenDecimals;
+                const amountWei = ethers.parseUnits(amount.toString(), decimals);
+                
+                // 先授权
+                const approveTx = await window.tokenContract.approve(CONFIG.gameContract, amountWei);
+                await approveTx.wait();
+                
+                // 再存入
+                const depositTx = await window.gameContract.deposit(amountWei);
+                const receipt = await depositTx.wait();
+                
+                // 通知服务器记录存入（立即返回）
+                let serverProcessing = false;
+                try {
+                    console.log('[DEPOSIT] 通知服务器记录存入...');
+                    const depositRes = await fetch(`${SERVER_URL}/api/deposit`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            player: STATE.userAddress,
+                            amount: amount,
+                            txHash: receipt.hash,
+                            token: SessionStore.get()  // [SEC-03] 携带 session token
+                        })
+                    });
+                    
+                    if (depositRes.ok) {
+                        const data = await depositRes.json();
+                        serverProcessing = data.success;
+                        console.log('[DEPOSIT] 服务器已接收:', data);
+                    } else {
+                        console.warn('[DEPOSIT_WARN] 服务器响应异常:', depositRes.status);
+                    }
+                } catch (err) {
+                    console.warn('[DEPOSIT_WARN] 服务器通知失败:', err.message);
+                }
+                
+                // 延迟1秒后刷新余额（给服务器处理时间）
+                console.log('[DEPOSIT] 延迟刷新余额...');
+                setTimeout(async () => {
+                    await updateWalletBalances();
+                    if (serverProcessing) {
+                        showToast(`成功存入 ${formatNumber(amount)} OEOE`, 'success');
+                    } else {
+                        showToast('链上存入成功，服务器同步中...', 'info');
+                    }
+                }, 1000);
+                
+                updateDepositAvailDisplay();
+                amountInput.value = '';
+                toggleModal(document.getElementById('deposit-modal'), false);
+            } catch (error) {
+                console.error('存入失败:', error);
+                showToast('存入失败: ' + (error.reason || error.message), 'error');
+                // 确保弹窗关闭
+                toggleModal(document.getElementById('deposit-modal'), false);
+            }
+        }
+        
+        // 确认提取（头部按钮版本 - 已弃用，请使用模态框的服务器代理提取）
+        async function confirmWithdraw() {
+            showToast('请使用提取模态框进行提取', 'info');
+            openWithdrawModal();
+        }
+
+        function resetFrogPosition() {
+            // Position at top center (above food grid), sleeping
+            const main = document.querySelector('main');
+            const mainRect = main.getBoundingClientRect();
+            const frogX = mainRect.width / 2;
+            const frogY = 80;
+            setFrogPosition(frogX, frogY);
+            setFrogState('sleeping');
+            setFrogDirection(1);
+        }
+
+        function generateMockPlayers() {
+            const names = ['Whale', 'MoonBoy', 'HODLer', 'Degens', 'DiamondHands', 'Satoshi', 'Vitalik', 'CryptoKing', 'Elon', 'CZ'];
+            STATE.mockPlayers = names.map((name, i) => ({
+                address: `0x${Math.random().toString(16).substr(2, 8)}...`,
+                name: name,
+                totalInvested: Math.floor(Math.random() * 500000) + 10000
+            })).sort((a, b) => b.totalInvested - a.totalInvested);
+        }
+
+        // [FIX-F06] HTML 转义函数，防止 XSS
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function showToast(msg, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'toast text-white text-sm';
+            toast.style.borderLeftColor = type === 'error' ? '#ef4444' : (type === 'success' ? '#22c55e' : '#06b6d4');
+            toast.textContent = msg;
+            els.toastContainer.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function formatNumber(num) {
+            if (num === undefined || num === null || isNaN(num)) {
+                return '0';
+            }
+            // [FIX-DECIMAL] 始终显示整数（OEOE 代币不显示小数位）
+            const rounded = Math.floor(Number(num));
+            return rounded.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        }
+
+        /**
+         * Wallet Logic
+         * connectWallet 已在后面覆盖为 connectRealWallet
+         */
+        
+        /**
+         * UI Rendering
+         */
+        function renderFoods() {
+            els.foodGrid.innerHTML = '';
+            CONFIG.foods.forEach((food, index) => {
+                // Create wrapper for card + bet display
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex flex-col items-center';
+                
+                const card = document.createElement('div');
+                card.className = `food-card bg-slate-800/80 border-2 border-slate-700 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-700/80 transition h-32 md:h-40 relative w-full`;
+                card.onclick = () => selectFood(index);
+                card.id = `food-${index}`;
+                
+                card.innerHTML = `
+                    <div class="text-4xl md:text-5xl mb-2 filter drop-shadow-md">${food.emoji}</div>
+                    <div class="text-xs text-slate-400 mb-1">${food.name}</div>
+                    <div class="absolute inset-0 bg-purple-500/10 opacity-0 transition-opacity duration-300 pointer-events-none" id="highlight-${index}"></div>
+                `;
+                
+                // Bet display below the card
+                const betDisplay = document.createElement('div');
+                betDisplay.className = 'font-tech text-yellow-400 font-bold text-sm md:text-base text-center mt-2 flex items-center justify-center gap-1';
+                betDisplay.innerHTML = `<i class="fa-solid fa-heart text-pink-500 text-xs"></i><span id="bet-${index}">0</span>`;
+                
+                wrapper.appendChild(card);
+                wrapper.appendChild(betDisplay);
+                els.foodGrid.appendChild(wrapper);
+            });
+        }
+
+        function updateUI() {
+            if (STATE.walletConnected) {
+                els.balanceDisplay.innerText = formatNumber(STATE.balance);
+            }
+
+            CONFIG.foods.forEach((_, index) => {
+                const el = document.getElementById(`bet-${index}`);
+                if (el) el.innerText = formatNumber(STATE.foodBets[index]);
+            });
+
+            if (STATE.walletConnected && STATE.selectedFoodIndex !== -1 && STATE.selectedBet > 0 && (STATE.gameState === 'BETTING' || STATE.gameState === 'IDLE')) {
+                els.feedBtn.disabled = false;
+                els.feedBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                els.feedBtn.disabled = true;
+                els.feedBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function selectFood(index) {
+            if (!STATE.walletConnected) {
+                showToast('请先连接钱包', 'error');
+                return;
+            }
+            if (STATE.gameState !== 'BETTING') return;
+
+            // 如果本轮已投喂其他食物，禁止选择
+            if (STATE.hasBetInCurrentRound) {
+                // 检查是否已经投喂过其他食物
+                let hasOtherBet = false;
+                for (let i = 0; i < 8; i++) {
+                    if (i !== index && STATE.userBetsOnFood[i] > 0) {
+                        hasOtherBet = true;
+                        break;
+                    }
+                }
+                if (hasOtherBet) {
+                    showToast('本轮已投喂其他食物，不能更换', 'error');
+                    return;
+                }
+            }
+
+            // 清除之前的选择
+            if (STATE.selectedFoodIndex !== -1 && STATE.selectedFoodIndex !== index) {
+                const previousIndex = STATE.selectedFoodIndex;
+                document.getElementById(`food-${previousIndex}`).classList.remove('selected');
+                document.getElementById(`highlight-${previousIndex}`).classList.remove('opacity-100');
+            }
+
+            STATE.selectedFoodIndex = index;
+            document.getElementById(`food-${index}`).classList.add('selected');
+            document.getElementById(`highlight-${index}`).classList.add('opacity-100');
+            
+            SFX.select();
+            els.statusText.innerText = `已选择: ${CONFIG.foods[index].name}，准备投喂`;
+            updateUI();
+        }
+
+        function setBetAmount(amount) {
+            if (isNaN(amount)) return;
+            if (amount <= 0) {
+                // 取消选中状态
+                STATE.selectedBet = 0;
+                els.betBtns.forEach(btn => {
+                    btn.classList.remove('bg-cyan-600', 'border-cyan-400');
+                    btn.classList.add('bg-slate-800', 'border-slate-600');
+                });
+                updateUI();
+                return;
+            }
+            STATE.selectedBet = amount;
+            els.betBtns.forEach(btn => {
+                if (parseInt(btn.dataset.amount) === amount) {
+                    btn.classList.add('bg-cyan-600', 'border-cyan-400');
+                    btn.classList.remove('bg-slate-800', 'border-slate-600');
+                } else {
+                    btn.classList.remove('bg-cyan-600', 'border-cyan-400');
+                    btn.classList.add('bg-slate-800', 'border-slate-600');
+                }
+            });
+            updateUI();
+        }
+
+        function toggleVolume() {
+            STATE.isMuted = !STATE.isMuted;
+            els.volumeBtn.innerHTML = STATE.isMuted ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
+            
+            // 如果取消静音且音乐还没开始，启动背景音乐
+            if (!STATE.isMuted && !bgMusicStarted && STATE.isMusicOn) {
+                startBackgroundMusic();
+            }
+        }
+
+        function toggleMusic() {
+            STATE.isMusicOn = !STATE.isMusicOn;
+            
+            if (els.musicBtn) {
+                if (STATE.isMusicOn) {
+                    els.musicBtn.innerHTML = '<i class="fa-solid fa-music"></i>';
+                    els.musicBtn.classList.remove('text-slate-600');
+                    els.musicBtn.classList.add('text-slate-400');
+                    // 启动音乐
+                    if (!bgMusicStarted && !STATE.isMuted) {
+                        startBackgroundMusic();
+                    }
+                    showToast('背景音乐已开启', 'success');
+                } else {
+                    els.musicBtn.innerHTML = '<i class="fa-solid fa-music"></i><i class="fa-solid fa-xmark" style="position: absolute; font-size: 0.6em; color: #ef4444;"></i>';
+                    els.musicBtn.style.position = 'relative';
+                    els.musicBtn.classList.remove('text-slate-400');
+                    els.musicBtn.classList.add('text-slate-600');
+                    // 停止音乐
+                    if (bgMusic) {
+                        bgMusic.pause();
+                    }
+                    bgMusicStarted = false;
+                    showToast('背景音乐已关闭', 'info');
+                }
+            }
+        }
+
+        function toggleModal(modal, show) {
+            if (show) {
+                modal.classList.remove('hidden');
+                if (modal.id === 'rank-modal') renderLeaderboard();
+                if (modal.id === 'history-modal') renderHistory();
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Game Logic
+         * placeBet 已在后面覆盖为 async 版本
+         */
+        function mockOtherPlayersBet() {
+            if (STATE.gameState !== 'IDLE' && STATE.gameState !== 'BETTING') return;
+            
+            const randomFood = Math.floor(Math.random() * 8);
+            const randomAmount = [1000, 5000, 10000, 20000][Math.floor(Math.random() * 4)];
+            
+            STATE.foodBets[randomFood] += randomAmount;
+            
+            const el = document.getElementById(`bet-${randomFood}`);
+            if (el) el.innerText = formatNumber(STATE.foodBets[randomFood]);
+        }
+
+        // ========== 服务器同步的游戏逻辑 ==========
+        
+        // 服务器地址 - 自动检测（支持本地开发和生产环境）
+        const SERVER_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://127.0.0.1:3001'
+            : `${window.location.protocol}//${window.location.host}`;
+        let serverPollingTimer = null;
+        let serverRoundId = 0;
+
+        // 从服务器获取游戏状态
+        async function fetchGameState() {
             try {
                 const res = await fetch(`${SERVER_URL}/api/game-state`);
-                const gs = await res.json();
-                STATE.roundId = gs.roundId;
-                STATE.phase = gs.phase || gs.state;
-                STATE.timeLeft = gs.timeLeft;
-            } catch (e) {}
-        }, 5000);
-
-        // Periodic balance sync
-        setInterval(async () => {
-            if (STATE.walletConnected && STATE.userAddress) {
-                try {
-                    const res = await fetch(`${SERVER_URL}/api/player-balance/${STATE.userAddress}`);
-                    const data = await res.json();
-                    if (data.balance != null) {
-                        STATE.balance = Math.floor(parseFloat(ethers.formatUnits(BigInt(data.balance), 9)));
-                        document.getElementById('balance-display').textContent = formatNumber(STATE.balance);
-                    }
-                } catch (e) {}
+                if (!res.ok) {
+                    console.error('获取游戏状态失败: HTTP', res.status);
+                    return null;
+                }
+                const data = await res.json();
+                if (data.roundId === undefined || data.roundId === null) data.roundId = serverRoundId || 1;
+                if (data.state === undefined) data.state = 'IDLE';
+                if (data.timeLeft === undefined || data.timeLeft === null) data.timeLeft = 0;
+                return data;
+            } catch (e) {
+                console.error('获取游戏状态失败:', e);
+                return null;
             }
-        }, 15000);
-    }
+        }
 
-    init();
-</script>
+        // 从服务器获取投喂数据
+        async function fetchRoundBets() {
+            try {
+                const res = await fetch(`${SERVER_URL}/api/round-bets`);
+                if (!res.ok) return null;
+                return await res.json();
+            } catch (e) {
+                console.error('获取投喂失败:', e);
+                return null;
+            }
+        }
+
+        // 倒计时显示：直接同步服务器返回的 timeLeft，不做本地递减
+        // ============ 倒计时系统：服务器校准 + 本地每秒递减 ============
+        // 策略：服务器每5秒给一次 timeLeft，本地用 setInterval 每秒递减
+        // 优点：1秒精度显示，零额外HTTP请求，不影响大量用户在线
+        let _countdownValue = 0;       // 当前倒计时值（秒）
+        let _countdownTimer = null;    // 本地递减定时器
+        let _countdownState = 'IDLE';  // 当前游戏状态
+
+        // 服务器数据到达时调用：校准倒计时并（重）启动本地递减
+        function updateCountdownDisplay(timeLeft, gameStateVal) {
+            _countdownState = gameStateVal;
+
+            if (gameStateVal !== 'BETTING') {
+                // 非投注状态：停止递减，显示 '-'
+                _stopCountdown();
+                const timerEl = document.getElementById('timer-display');
+                if (timerEl) timerEl.innerText = '-';
+                return;
+            }
+
+            // 校准：用服务器值更新本地计数（误差修正）
+            _countdownValue = Math.max(0, timeLeft);
+            _renderCountdown();
+
+            // 确保本地递减定时器在跑
+            _startCountdown();
+        }
+
+        function _renderCountdown() {
+            const timerEl = document.getElementById('timer-display');
+            if (timerEl) timerEl.innerText = _countdownValue;
+
+            // 归零时禁用投喂按钮
+            if (_countdownValue === 0 && STATE.gameState === 'BETTING') {
+                setClientPhase('SETTLING');
+                if (els.feedBtn) {
+                    els.feedBtn.disabled = true;
+                    els.feedBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+
+        function _startCountdown() {
+            if (_countdownTimer) return; // 已在跑，不重复启动
+            _countdownTimer = setInterval(() => {
+                if (_countdownState !== 'BETTING' || _countdownValue <= 0) {
+                    _stopCountdown();
+                    return;
+                }
+                _countdownValue = Math.max(0, _countdownValue - 1);
+                _renderCountdown();
+            }, 1000);
+        }
+
+        function _stopCountdown() {
+            if (_countdownTimer) {
+                clearInterval(_countdownTimer);
+                _countdownTimer = null;
+            }
+        }
+
+
+
+        // 轮询执行锁，防止并行执行
+        let isPolling = false;
+        
+        // ========== WebSocket 连接（优先使用）==========
+        let ws = null;
+        let wsReconnectTimer = null;
+        let useWebSocket = false;
+        
+        // 连接 WebSocket
+        function connectWebSocket() {
+            try {
+                const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsHost = SERVER_URL.replace(/^https?:\/\//, '');
+                const wsUrl = `${wsProtocol}//${wsHost}`;
+                
+                console.log('🔌 连接 WebSocket:', wsUrl);
+                ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    console.log('✅ WebSocket 已连接');
+                    useWebSocket = true;
+                    // [FIX-G] 重连后自动重新发送 login（如果已登录），确保服务器能验证身份并注册连接
+                    if (STATE.walletConnected && STATE.userAddress && SessionStore.get()) {
+                        ws.send(JSON.stringify({
+                            type: 'login',
+                            address: STATE.userAddress,
+                            token: SessionStore.get()
+                        }));
+                        console.log('🔐 WebSocket 重连后重新登录:', STATE.userAddress.slice(0,10) + '...');
+                    }
+                    // WebSocket 连接成功，但保持轮询以确保倒计时更新
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        handleWebSocketMessage(msg.type, msg.data);
+                    } catch (e) {
+                        console.error('解析 WebSocket 消息失败:', e);
+                    }
+                };
+                
+                ws.onclose = () => {
+                    console.log('⚠️ WebSocket 已断开，5秒后重连');
+                    useWebSocket = false;
+                    wsReconnectTimer = setTimeout(connectWebSocket, 5000);
+                };
+                
+                ws.onerror = (err) => {
+                    console.error('WebSocket 错误:', err);
+                    useWebSocket = false;
+                };
+            } catch (e) {
+                console.error('WebSocket 连接失败:', e);
+                useWebSocket = false;
+            }
+        }
+        
+        // 处理 WebSocket 消息
+        function handleWebSocketMessage(type, data) {
+            switch (type) {
+                case 'kicked-out':
+                    // [FIX-KICK2] 被其他设备踢出：校验是否确实是当前 session 被踢
+                    // 如果断开重连期间收到旧连接的 kicked-out，不应断开新连接
+                    console.log('🚫 收到踢出消息:', data?.reason);
+                    if (data?.sessionToken && data.sessionToken !== SessionStore.get()) {
+                        console.log('⏭️ 忽略：踢出的是旧 session，当前 session 不受影响');
+                        break;
+                    }
+                    if (!STATE.walletConnected) {
+                        console.log('⏭️ 忽略：钱包已断开');
+                        break;
+                    }
+                    showToast('您的账号在其他设备登录，已强制断开当前连接', 'error');
+                    setTimeout(() => {
+                        disconnectWallet();
+                    }, 2000);
+                    break;
+                    
+                case 'round-started':
+                    // 新轮次开始
+                    console.log(`🎮 WebSocket: 新轮次 #${data.roundId}`);
+                    serverRoundId = data.roundId;
+                    pendingRoundStartData = {
+                        roundId: data.roundId,
+                        initialTimeLeft: CONFIG.countdownTime || 60
+                    };
+                    _stopCountdown();
+
+
+
+
+
+
+
+
+                    // 更新轮次显示
+                    // [FIX-ROUND] 使用 displayRoundId（每日0点重置），fallback 到 roundId
+                    const roundDisplay = document.getElementById('game-round-display');
+                    if (roundDisplay) {
+                        roundDisplay.innerText = `#${data.displayRoundId || data.roundId}`;
+                    }
+                    
+                    // [FIX-TIMING] 动画/回位期间：延迟开始新一局；真正的倒计时和金额清零在 resetGameRound 完成后统一触发
+                    if (isProcessingSettlement || isResettingGameRound) {
+                        console.log('⏳ 动画/回位未完成，延迟开始新一局倒计时');
+                        pendingResetRound = data.roundId;
+                        const timerDisplay = document.getElementById('timer-display');
+                        if (timerDisplay) timerDisplay.innerText = '-';
+                    } else {
+                        resetGameRound();
+                    }
+                    break;
+                    
+                case 'round-settled':
+                    // 结算结果
+                    // [FIX-DUP] 不在此处写历史记录，统一由 handleServerSettlement → processServerResult 处理
+                    // 之前此处提前写一次 + processServerResult 再写一次导致重复显示
+                    (async () => {
+                        setClientPhase('SETTLING');
+                        updateCountdownDisplay(0, 'SETTLING');
+                        
+                        // 触发结算处理（历史记录由 processServerResult 统一写入）
+                        if (data.winningFood !== null && data.winningFood !== undefined) {
+                            handleServerSettlement({
+                                roundId: data.roundId,
+                                state: 'SETTLING',
+                                timeLeft: 0,
+                                winningFood: data.winningFood,
+                                totalPool: data.totalPool || 0,
+                                rewardPool: data.rewardPool || 0,
+                                winnerTotal: data.winnerTotal || 0,
+                                isNoContest: data.isNoContest,
+                                loserReductions: data.loserReductions || [],
+                                txHash: data.txHash || null,
+                                playerResults: data.playerResults || null  // 服务器返回的玩家结算结果
+                            });
+                        }
+                    })();
+                    break;
+                    
+                case 'bet-placed':
+                    // 其他玩家投喂（更新奖池显示）- 旧事件兼容
+                    if (data && data.foodBets) {
+                        STATE.foodBets = data.foodBets;
+                        renderFoods();
+                    }
+                    break;
+
+                case 'bets-updated':
+                    // [FIX-WS] 服务端 bet 成功后主动 broadcast，替代 /api/round-bets 轮询
+                    // [FIX-ANIM4] 动画期间不更新金额显示，避免金额提前清零
+                    if (data && data.foodBets && data.roundId === serverRoundId && !isProcessingSettlement) {
+                        STATE.foodBets = data.foodBets;
+                        data.foodBets.forEach((amount, idx) => {
+                            const el = document.getElementById(`bet-${idx}`);
+                            if (el) el.innerText = formatNumber(amount);
+                        });
+                    }
+                    break;
+                    
+                case 'settlement-failed':
+                    console.warn('⚠️ WebSocket: 结算失败', data);
+                    showToast('被吃玩家的链上余额不足，本局返还所有投喂。', 'warning');
+                    updateCountdownDisplay(0, 'SETTLING');
+                    if (data && data.roundId) {
+                        pendingResetRound = data.roundId;
+                    }
+                    break;
+
+                case 'balance-updated':
+                    // 余额更新广播
+                    if (data && data.player) {
+                        const addr = STATE.userAddress ? STATE.userAddress.toLowerCase() : null;
+                        const broadcastAddr = data.player.toLowerCase();
+                        
+                        if (addr === broadcastAddr) {
+                            console.log(`💰 WebSocket: 余额更新 ${data.change > 0 ? '+' : ''}${data.change}, 新余额: ${data.balance}`);
+                            
+                            // [FIX-BAL4] balance 字段缺失或 NaN 时不更新，防止收到格式异常消息时余额被清零
+                            if (data.balance == null || isNaN(Number(data.balance))) {
+                                console.warn('⚠️ WebSocket balance-updated: balance 字段异常，忽略', data);
+                                break;
+                            }
+                            
+                            const newBal = Math.floor(Number(data.balance));
+                            
+                            if (isProcessingSettlement) {
+                                // [FIX-ANIM] 动画进行中：缓存余额，等动画结束后再刷新显示
+                                console.log(`⏳ 动画进行中，缓存余额更新: ${newBal} OEOE`);
+                                pendingBalanceUpdate = { balance: newBal };
+                            } else {
+                                // 动画未进行：立即更新
+                                STATE.balance = newBal;
+                                document.getElementById('balance-display').innerText = formatNumber(STATE.balance);
+                                const withdrawAvail = document.getElementById('withdraw-avail');
+                                if (withdrawAvail) withdrawAvail.innerText = formatNumber(STATE.balance);
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+        
+        // 同步游戏状态（单次执行）
+        async function syncGameStateOnce() {
+            if (isPolling) {
+                // 结算动画期间跳过是正常的，不显示警告
+                return;
+            }
+            
+            isPolling = true;
+            
+            try {
+                const state = await fetchGameState();
+                if (!state) {
+                    console.log('⚠️ 获取游戏状态失败，服务器可能未启动');
+                    const timerDisplay = document.getElementById('timer-display');
+                    if (timerDisplay && timerDisplay.innerText === '-') {
+                        timerDisplay.innerText = '-';
+                    }
+                    return;
+                }
+                
+                const prevRoundId = serverRoundId;
+                serverRoundId = state.roundId;
+                
+                // 更新倒计时（使用服务器返回的值）
+                STATE.timeLeft = state.timeLeft || 0;
+                
+                console.log('🔄 同步状态:', '轮次=' + state.roundId, '倒计时=' + state.timeLeft, '状态=' + state.state);
+                
+                // ========== 首先检测是否结算（最高优先级）==========
+                const serverHasWinningFood = state.winningFood !== null && state.winningFood !== undefined && state.winningFood !== -1;
+                const serverIsSettling = state.state === 'SETTLING';
+                const isCurrentlySettling = isProcessingSettlement;
+                const alreadySettledThisRound = lastSettledRound === state.roundId;
+                
+                // 触发结算的条件：服务器状态为SETTLING或有获胜食物，且前端没有在处理结算，且未结算过此轮次
+                if ((serverIsSettling || serverHasWinningFood) && !isCurrentlySettling && !alreadySettledThisRound) {
+                    console.log('🎯 检测到结算:', 
+                        'winningFood:', state.winningFood, 
+                        'round:', state.roundId,
+                        '当前gameState:', STATE.gameState);
+                    pendingSettlementRound = state.roundId;
+                    
+                    // 设置状态并禁用投喂按钮
+                    setClientPhase('SETTLING');
+                    if (els.feedBtn) {
+                        els.feedBtn.disabled = true;
+                        els.feedBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                    
+                    // 更新倒计时显示为空（隐藏0）
+                    const timerDisplay = document.getElementById('timer-display');
+                    if (timerDisplay) {
+                        timerDisplay.innerText = '-';
+                    }
+                    
+                    // 等待 winningFood（如果还没有的话）
+                    if (serverHasWinningFood) {
+                        await handleServerSettlement(state);
+                    }
+                    return;
+                }
+                
+                // 如果已结算过此轮次，检查是否开始了新轮次
+                if (alreadySettledThisRound) {
+                    // 如果服务器已经开始新轮次（roundId更大且BETTING），重置结算状态
+                    if (state.state === 'BETTING' && state.roundId > lastSettledRound) {
+                        lastSettledRound = -1;  // 重置以便下一轮结算
+                    }
+                    // [FIX-ANIM] 只在动画已结束时才清除结算锁，不能在动画进行中强制解锁
+                    // isProcessingSettlement 由 handleServerSettlement finally 统一释放
+                    return;
+                }
+                
+                // 如果正在结算动画或回位重置中，不执行任何 UI/状态重置
+                if (isProcessingSettlement || isResettingGameRound) {
+                    return;
+                }
+
+                // 如果服务器已经是BETTING状态，且动画已结束，才执行兜底重置
+                if (state.state === 'BETTING') {
+                    setClientPhase('BETTING');
+                    isSettling = false;
+                    updateUI();
+
+                    // [FIX-FROG] 兜底：动画已结束但青蛙仍停在上局食物位置
+                    if (!isResettingGameRound && STATE.targetFoodIndex !== -1) {
+                        console.log('🛠️ 兜底重置：动画已结束但青蛙仍在食物位置');
+                        resetGameRound();
+                    }
+                }
+                
+                // 非结算状态才同步服务端 phase/state
+                setClientPhase(state.phase || state.state);
+                
+                // ========== 正常游戏状态的UI更新 ==========
+                
+                // 同步服务器倒计时
+                updateCountdownDisplay(state.timeLeft || 0, state.phase || state.state);
+
+
+
+
+
+
+                
+                // 更新轮次显示
+                const gameRoundEl = document.getElementById('game-round-display');
+                if (gameRoundEl) {
+                    // [FIX-ROUND] 使用 displayRoundId（每日0点重置），fallback 到 roundId
+                    gameRoundEl.innerText = '#' + (state.displayRoundId || state.roundId);
+                }
+                
+                // 更新游戏状态显示
+                // const statusText = document.getElementById('status-text');
+                // if (statusText) {
+                //     if (state.state === 'BETTING' && state.timeLeft > 0) {
+                //         statusText.innerText = `投喂中 - 剩余 ${state.timeLeft} 秒`;
+                //     } else if (state.state === 'SETTLING' || serverHasWinningFood) {
+                //         statusText.innerText = '结算中...';
+                //     } else {
+                //         statusText.innerText = '连接成功，等待游戏开始...';
+                //     }
+                // }
+                
+                // 更新游戏状态
+                if ((state.phase || state.state) === 'BETTING') {
+                    setClientPhase('BETTING');
+                    updateUI();
+                }
+                
+                // [FIX-WS] foodBets 改由 WebSocket bets-updated 实时推送，此处不再轮询
+                // fetchRoundBets 只在首次加载（round-started）时调用一次作为兜底
+                
+                // 如果轮次变化（新轮次开始）
+                if (state.roundId !== prevRoundId && prevRoundId > 0 && !isProcessingSettlement && !serverHasWinningFood) {
+                    console.log('新轮次:', state.roundId);
+                    resetGameRound();
+                    if (STATE.walletConnected) {
+                        showToast(`轮次 #${state.roundId} 开始！`, 'info');
+                    }
+                }
+                
+            } catch (err) {
+                console.error('同步游戏状态失败:', err);
+            } finally {
+                isPolling = false;
+            }
+        }
+        
+        // 启动服务器状态同步（防重复启动）
+        async function startServerPolling() {
+            // 如果已经启动过，不再重复启动
+            if (serverPollingTimer) {
+                console.log('⚠️ 轮询已在运行中，跳过重复启动');
+                return;
+            }
+            
+            // 尝试连接 WebSocket（优先使用）
+            connectWebSocket();
+            
+
+            console.log('🔄 立即执行首次状态同步...');
+            await syncGameStateOnce();
+            
+
+
+            // [FIX-429] 轮询仅作兜底校准，5秒一次（WebSocket 推送实时数据，本地倒计时驱动显示）
+            // 轮询间隔5秒，同步服务器倒计时（WebSocket 实时推送状态，此处兜底）
+            serverPollingTimer = setInterval(() => {
+                syncGameStateOnce();
+            }, 5000);
+
+            console.log('✅ 轮询已启动，间隔5秒（倒计时由服务器同步）');
+        }
+
+        let isSettling = false;
+        let lastSettledRound = -1;
+        let isProcessingSettlement = false;  // 标记是否正在处理结算动画（包含回位阶段）
+        let pendingSettlementRound = -1;     // 记录待结算的轮次ID
+        let pendingResetRound = -1;          // [FIX-DESIGN] 记录等待重置的新轮次ID
+        let pendingBalanceUpdate = null;     // [FIX-ANIM] 动画期间缓存的余额更新，动画结束后再刷新
+        let pendingRoundStartData = null;    // [FIX-TIMING] 缓存新轮次开始信息，等青蛙回位+清零后再真正开始倒计时
+
+        function setClientPhase(phase) {
+            STATE.phase = phase;
+            STATE.gameState = phase;
+        }
+        
+        // 全局保存最后投喂信息（用于结算时恢复）
+        let lastBetInfo = {
+            roundId: -1,
+            foodIndex: -1,
+            amount: 0
+        };
+
+        // 处理服务器结算结果
+        async function handleServerSettlement(state) {
+            // 防重入
+            if (isSettling || isProcessingSettlement) return;
+            
+            // 检查是否已经结算过这个轮次
+            if (lastSettledRound === state.roundId) {
+                pendingSettlementRound = -1;
+                return;
+            }
+            
+            isSettling = true;
+            isProcessingSettlement = true;
+            lastSettledRound = state.roundId;
+            pendingSettlementRound = -1;
+            setClientPhase('SETTLING');
+            
+            STATE.targetFoodIndex = state.winningFood;
+            
+            try {
+                // 青蛙从睡眠唤醒
+                setFrogState('idle');
+                els.statusText.innerText = '黑蛙饿了！开始觅食...';
+                showToast('🐸 黑蛙饿了！开始觅食...', 'info');
+                await new Promise(r => setTimeout(r, 300));
+                
+                // 青蛙跳跃动画
+                await frogFollowPath(STATE.targetFoodIndex);
+                
+                // 吃食物动画
+                setFrogState('eating');
+                SFX.eat();
+                
+                // 标记被吃的食物：添加红色抖动效果
+                const eatenFoodEl = document.getElementById(`food-${STATE.targetFoodIndex}`);
+                if (eatenFoodEl) {
+                    eatenFoodEl.classList.add('eaten');
+                    // 短暂强调"被吃"的视觉效果
+                    eatenFoodEl.style.transition = 'transform 0.1s, box-shadow 0.2s';
+                    eatenFoodEl.style.boxShadow = '0 0 20px rgba(239,68,68,0.8)';
+                    setTimeout(() => { eatenFoodEl.style.boxShadow = ''; }, 600);
+                }
+                
+                // 等待吃食物动画完成
+                await new Promise(r => setTimeout(r, 800));
+                
+                // 计算结果并播放对应音效/动画
+                await processServerResult(state);
+                
+                // 不在这里调用 resetGameRound()，让青蛙停留在食物位置
+                // 等下一轮开始时再重置
+            } catch (error) {
+                console.error('结算过程出错:', error);
+            } finally {
+                // 先释放结算锁；isProcessingSettlement 延后到 resetGameRound 完成后再释放
+                isSettling = false;
+                
+                // [FIX-ANIM] 动画结束后，冲刷缓存的余额更新
+                // 此时青蛙已到达食物、结果已展示，再更新余额数字是合适的时机
+                if (pendingBalanceUpdate !== null) {
+                    console.log(`✅ 动画完成，冲刷缓存余额: ${pendingBalanceUpdate.balance} OEOE`);
+                    STATE.balance = pendingBalanceUpdate.balance;
+                    document.getElementById('balance-display').innerText = formatNumber(STATE.balance);
+                    const withdrawAvail = document.getElementById('withdraw-avail');
+                    if (withdrawAvail) withdrawAvail.innerText = formatNumber(STATE.balance);
+                    pendingBalanceUpdate = null;
+                }
+                
+                // [FIX-DESIGN] 动画完成后，检查是否有新轮次等待重置
+                if (pendingResetRound > 0) {
+                    console.log(`✅ 动画完成，执行延迟重置 (轮次 #${pendingResetRound})`);
+                    pendingResetRound = -1;
+                    resetGameRound();
+                }
+                
+                // 通知服务器动画完成（保留用于日志记录）
+                fetch(`${SERVER_URL}/api/animation-complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                }).catch(err => console.error('发送通知失败:', err));
+                
+                // [FIX-FROG2] 超时保护：同时检查游戏状态 AND 青蛙位置
+                setTimeout(async () => {
+                    // 场景1：仍在 SETTLING 状态（可能 round-started 丢失）
+                    if (STATE.gameState === 'SETTLING' || STATE.gameState === 'IDLE') {
+                        await syncGameStateOnce();
+                        
+                        if (STATE.gameState === 'SETTLING') {
+                            resetGameRound();
+                        }
+                    }
+                    // 场景2：已经是 BETTING 但青蛙仍停在食物位置（resetGameRound 可能被跳过）
+                    if (STATE.gameState === 'BETTING' && STATE.targetFoodIndex !== -1) {
+                        console.log('🛠️ [FIX-FROG2] 超时兜底：青蛙仍在食物位置，强制重置');
+                        resetGameRound();
+                    }
+                }, 5000);
+            }
+        }
+
+        // 处理服务器结算结果（计算玩家收益）
+        async function processServerResult(state) {
+            // 在任何操作之前，先保存用户的投喂信息（防止resetGameRound清空）
+            let userBetIndex = -1;
+            let userBetAmount = 0;
+            for (let i = 0; i < 8; i++) {
+                if (STATE.userBetsOnFood[i] > 0) {
+                    userBetIndex = i;
+                    userBetAmount = STATE.userBetsOnFood[i];
+                    break;
+                }
+            }
+            
+            // 如果 STATE.userBetsOnFood 已被清空，尝试从 lastBetInfo 恢复
+            if (userBetIndex === -1 && lastBetInfo.roundId === state.roundId) {
+                console.log('🔄 从 lastBetInfo 恢复投喂信息:', lastBetInfo);
+                userBetIndex = lastBetInfo.foodIndex;
+                // [FIX-13] 优先使用 userBetsOnFood 的累计值（更准确），fallback 到 lastBetInfo.amount
+                userBetAmount = (lastBetInfo.foodIndex >= 0 && STATE.userBetsOnFood[lastBetInfo.foodIndex] > 0)
+                    ? STATE.userBetsOnFood[lastBetInfo.foodIndex]
+                    : lastBetInfo.amount;
+            }
+            
+            // 保存投喂信息供记录使用
+            const savedUserBetIndex = userBetIndex;
+            const savedUserBetAmount = userBetAmount;
+            
+            console.log('📊 投喂信息:', { savedUserBetIndex, savedUserBetAmount, roundId: state.roundId });
+            
+            // 如果 rewardPool 为 0，主动获取结算结果
+            let rewardPool = state.rewardPool || 0;
+            let winnerTotal = state.winnerTotal || 0;
+            let loserReductions = state.loserReductions || [];
+            
+            if ((rewardPool === 0 || !state.loserReductions) && state.state === 'SETTLING') {
+                try {
+                    const res = await fetch(`${SERVER_URL}/api/settlement?roundId=${state.roundId}`);
+                    const settlement = await res.json();
+                    rewardPool = settlement.rewardPool || 0;
+                    winnerTotal = settlement.winnerTotal || 0;
+                    loserReductions = settlement.loserReductions || [];
+                    state.loserReductions = loserReductions;
+                } catch (e) {
+                    console.error('获取结算结果失败:', e);
+                }
+            }
+            
+            // 无竞争局：只有一种食物被投喂，返还本金
+            if (state.isNoContest) {
+                if (savedUserBetAmount > 0) {
+                    // [FIX-BALANCE] 返还本金由服务器处理并推送 balance-updated，不在此本地累加
+                    // STATE.balance += savedUserBetAmount;  ← 已移除
+                    showToast(`黑蛙拒绝你的投喂。返还 ${formatNumber(savedUserBetAmount)} OEOE`, 'info');
+                    addToHistoryWithBet(state.winningFood, savedUserBetIndex, savedUserBetAmount, false, 0, state.totalPool, state.roundId);
+                    // 余额由 balance-updated WebSocket 消息更新
+                } else {
+                    addToHistoryWithBet(state.winningFood, -1, 0, false, 0, state.totalPool, state.roundId);
+                }
+                // 延迟同步余额（降级兜底）
+                setTimeout(async () => {
+                    try {
+                        await updateWalletBalances();
+                    } catch (e) {
+                        console.error('余额同步失败:', e);
+                    }
+                }, 1500);
+                return;
+            }
+            
+            // 没有投喂时也记录（只是观看）
+            if (savedUserBetAmount <= 0) {
+                addToHistoryWithBet(state.winningFood, -1, 0, false, 0, state.totalPool, state.roundId);
+                return;
+            }
+            
+            const won = savedUserBetIndex !== state.winningFood;
+            const totalPool = state.totalPool || 0;
+            
+            // 优先使用服务器返回的玩家结算结果
+            const myResult = state.playerResults?.[STATE.userAddress?.toLowerCase()];
+            
+            let winAmount = 0;
+            let isWin = false;
+            let lossAmount = 0;
+            let actualLoss = 0;
+            
+            if (won) {
+                isWin = true;
+                
+                if (myResult) {
+                    // 使用服务器返回的结算结果
+                    winAmount = myResult.changeAmount || 0;
+                } else {
+                    // 兼容旧版服务器：本地计算
+                    if (winnerTotal > 0 && rewardPool > 0) {
+                        const share = savedUserBetAmount / winnerTotal;
+                        winAmount = Math.floor(rewardPool * share);
+                        if (winAmount === 0 && share > 0) {
+                            winAmount = Math.max(1, Math.floor(rewardPool * share));
+                        }
+                    }
+                }
+                
+                // [FIX-BALANCE] 不在前端本地累加余额，避免与 balance-updated WebSocket 消息双重计算
+                // 余额由 balance-updated 消息（服务器单播）精确更新
+                // STATE.balance += winAmount;  ← 已移除
+                
+                if (winAmount > 0) {
+                    showToast(`🎉 躲避成功！获得奖励 ${formatNumber(winAmount)} OEOE`, 'success');
+                } else {
+                    showToast(`🎉 躲避成功！`, 'info');
+                }
+                SFX.win();                triggerConfetti();
+                
+                // [ANIM] 胜利遮罩闪光
+                const winOverlay = document.getElementById('win-overlay');
+                if (winOverlay) {
+                    winOverlay.classList.remove('active');
+                    void winOverlay.offsetWidth; // 强制重绘
+                    winOverlay.classList.add('active');
+                    setTimeout(() => winOverlay.classList.remove('active'), 1200);
+                }
+                
+                // [ANIM] 青蛙切换到胜利状态，持续跳动
+                setFrogState('win');
+                
+                // [ANIM] 玩家投的食物卡片发光脉冲（躲避成功）
+                if (savedUserBetIndex >= 0) {
+                    const winCard = document.getElementById(`food-${savedUserBetIndex}`);
+                    if (winCard) {
+                        winCard.classList.add('winner-pulse');
+                        setTimeout(() => winCard.classList.remove('winner-pulse'), 3000);
+                    }
+                }
+                
+                // 显示链上交易哈希（如果有）
+                if (state.txHash) {
+                    const shortTx = `${state.txHash.slice(0, 10)}...${state.txHash.slice(-8)}`;
+                    setTimeout(() => {
+                        showToast(`📝 链上交易: ${shortTx}`, 'info');
+                    }, 1500);
+                }
+                
+                // 赢家历史记录
+                addToHistoryWithBet(state.winningFood, savedUserBetIndex, savedUserBetAmount, true, winAmount, totalPool, state.roundId);
+            } else {
+                // 输了
+                isWin = false;
+                lossAmount = savedUserBetAmount;
+                
+                // 优先使用服务器返回的结算结果
+                if (myResult) {
+                    // 输家：changeAmount 是负数（实际损失）
+                    actualLoss = Math.abs(myResult.changeAmount || 0);
+                    const savedAmountFromServer = myResult.savedAmount || 0;
+                    if (savedAmountFromServer > 0) {
+                        showToast(`😢 躲避失败！损失 ${formatNumber(actualLoss)} OEOE（减伤返还 ${formatNumber(savedAmountFromServer)} OEOE）`, 'warning');
+                    } else {
+                        showToast(`😢 躲避失败！损失 ${formatNumber(actualLoss)} OEOE`, 'error');
+                    }
+                } else {
+                    // 兼容旧版服务器：检查减伤
+                    let savedAmount = 0;
+                    if (state.loserReductions && Array.isArray(state.loserReductions)) {
+                        const myReduction = state.loserReductions.find(l => 
+                            l.player.toLowerCase() === STATE.userAddress?.toLowerCase()
+                        );
+                        if (myReduction && myReduction.savedAmount > 0) {
+                            savedAmount = myReduction.savedAmount;
+                        }
+                    }
+                    actualLoss = savedUserBetAmount - savedAmount;
+                    
+                    if (savedAmount > 0) {
+                        showToast(`😢 躲避失败！损失 ${formatNumber(actualLoss)} OEOE（减伤返还 ${formatNumber(savedAmount)} OEOE）`, 'warning');
+                    } else {
+                        showToast(`😢 躲避失败！损失 ${formatNumber(savedUserBetAmount)} OEOE`, 'error');
+                    }
+                }
+                // [FIX-BALANCE] 输家余额也由 balance-updated 精确更新，不在此本地修改
+                // STATE.balance += savedAmount;  ← 已移除
+                SFX.lose();
+                
+                // [ANIM] 失败遮罩红色闪光
+                const loseOverlay = document.getElementById('lose-overlay');
+                if (loseOverlay) {
+                    loseOverlay.classList.remove('active');
+                    void loseOverlay.offsetWidth;
+                    loseOverlay.classList.add('active');
+                    setTimeout(() => loseOverlay.classList.remove('active'), 1500);
+                }
+                
+                // [ANIM] 青蛙切换到失败状态，垂头丧气
+                setFrogState('lose');
+                
+                // [ANIM] 玩家投的被吃食物卡片：强调失败动画
+                if (savedUserBetIndex >= 0) {
+                    const loseCard = document.getElementById(`food-${savedUserBetIndex}`);
+                    if (loseCard) {
+                        loseCard.classList.add('loser-fade');
+                        setTimeout(() => loseCard.classList.remove('loser-fade'), 1000);
+                    }
+                }
+                
+                // 显示链上交易哈希（如果有）
+                if (state.txHash) {
+                    const shortTx = `${state.txHash.slice(0, 10)}...${state.txHash.slice(-8)}`;
+                    setTimeout(() => {
+                        showToast(`📝 链上交易: ${shortTx}`, 'info');
+                    }, 1500);
+                }
+                
+                // 输家历史记录
+                const recordLoss = actualLoss > 0 ? -actualLoss : -lossAmount;
+                addToHistoryWithBet(state.winningFood, savedUserBetIndex, savedUserBetAmount, false, recordLoss, totalPool, state.roundId);
+            }
+            
+            // [FIX-BALANCE] 余额由 balance-updated WebSocket 消息精确更新
+            // 此处只在 balance-updated 未到达时（降级）才从 API 拉取余额
+            // 延迟刷新余额
+            setTimeout(async () => {
+                try {
+                    await updateWalletBalances();
+                } catch (e) {
+                    console.error('余额同步失败:', e);
+                }
+            }, 2000);
+        }
+
+        // 提交投喂到服务器（使用数据库余额检查）
+        async function submitBetToServer(foodIndex, amount) {
+            if (!STATE.userAddress) return { success: false, error: '未连接钱包' };
+            
+            try {
+                // [SEC] 组装投喂数据，附带 session token
+                const betData = {
+                    player: STATE.userAddress,
+                    foodIndex: foodIndex,
+                    amount: amount,
+                    nonce: Date.now(),
+                    token: SessionStore.get()  // [SEC-02] 携带 session token
+                };
+                
+                // 发送到服务器（bet API 已包含余额检查 + session验证）
+                const res = await fetch(`${SERVER_URL}/api/bet`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(betData)
+                });
+                
+                if (!res.ok) {
+                    const errText = await res.text();
+                    return { success: false, error: errText || `投喂失败: ${res.status}` };
+                }
+                
+                const result = await res.json();
+                
+                // 如果服务器返回余额不足，更新本地余额
+                if (!result.success && result.error && result.error.includes('余额不足')) {
+                    // [FIX-BALANCE] 从错误信息中提取余额（服务器格式："当前只有 X.XX OEOE"）
+                    // 不论如何都从API获取真实余额，不信任错误消息里的数字
+                    try {
+                        const balanceRes = await fetch(`${SERVER_URL}/api/player-balance/${STATE.userAddress}`);
+                        const balanceData = await balanceRes.json();
+                        const balanceWei = BigInt(balanceData.balance || '0');
+                        STATE.balance = Math.floor(parseFloat(ethers.formatUnits(balanceWei, CONFIG.tokenDecimals)));
+                    } catch (e) {
+                        // 降级：从错误消息提取
+                        const match = result.error.match(/当前只有\s*([\d.]+)/);
+                        if (match) STATE.balance = Math.floor(parseFloat(match[1]));
+                    }
+                    updateUI();
+                }
+                
+                return result;
+                
+            } catch (error) {
+                console.error('投喂失败:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // ========== 覆盖原有的本地游戏逻辑 ==========
+
+        function startGame() {
+            // 不再本地启动，由服务器控制
+            setClientPhase('BETTING');
+            els.statusText.innerText = '黑蛙饿了，快选择食物投喂！';
+            els.timerDisplay.classList.remove('hidden');
+        }
+
+        function getFoodCenterPosition(index) {
+            const foodEl = document.getElementById(`food-${index}`);
+            if (!foodEl) return { x: 0, y: 0 };
+            const foodRect = foodEl.getBoundingClientRect();
+            const main = document.querySelector('main');
+            const mainRect = main.getBoundingClientRect();
+            
+            return {
+                x: foodRect.left - mainRect.left + foodRect.width / 2,
+                y: foodRect.top - mainRect.top + foodRect.height / 2
+            };
+        }
+
+        async function endGame() {
+            // 由服务器触发
+            setClientPhase('RESULT');
+            clearInterval(STATE.timer);
+        }
+
+        async function frogFollowPath(targetIndex) {
+            // 按蛇形路径跳跃：0→1→2→3→7→6→5→4
+            const targetPathIndex = FOOD_PATH.indexOf(targetIndex);
+            if (targetPathIndex === -1) return;
+            
+            console.log(`青蛙开始跳跃到食物 ${targetIndex}, 路径索引 ${targetPathIndex}`);
+            
+            for (let i = 0; i <= targetPathIndex; i++) {
+                const foodIndex = FOOD_PATH[i];
+                const pos = getFoodCenterPosition(foodIndex);
+                
+                // 青蛙始终面向右侧，不进行反转
+                setFrogDirection(1);
+                setFrogState('jumping');
+                SFX.jump();
+                
+                setFrogPosition(pos.x, pos.y);
+                
+                await new Promise(resolve => setTimeout(resolve, 400));
+                
+                setFrogState('idle');
+                if (i < targetPathIndex) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+            
+            console.log(`青蛙到达食物 ${targetIndex}`);
+        }
+
+        // resetGameRound 防重入锁
+        let isResettingGameRound = false;
+        let resetGameRoundTimer = null;  // [FIX-FROG2] 跟踪解锁定时器
+        
+        // 重置游戏轮次
+        function resetGameRound() {
+            if (isResettingGameRound) {
+                console.log('⚠️ resetGameRound 正在执行中，跳过重复调用');
+                return;
+            }
+            
+            isResettingGameRound = true;
+            if (resetGameRoundTimer) {
+                clearTimeout(resetGameRoundTimer);
+                resetGameRoundTimer = null;
+            }
+            
+            STATE.selectedFoodIndex = -1;
+            STATE.userBetsOnFood = [0, 0, 0, 0, 0, 0, 0, 0];
+            setClientPhase('IDLE');
+            STATE.targetFoodIndex = -1;
+            STATE.hasBetInCurrentRound = false;
+            
+            // [FIX-ANIM2] 先清除食物状态样式和选中高亮，但暂不清零金额
+            // 金额在青蛙滑回初始位置后再清零，避免动画未结束时数字就归零
+            CONFIG.foods.forEach((food, idx) => {
+                const el = document.getElementById(`food-${idx}`);
+                if (el) el.classList.remove('eaten', 'winner', 'selected', 'winner-pulse', 'loser-fade');
+                const highlightEl = document.getElementById(`highlight-${idx}`);
+                if (highlightEl) highlightEl.classList.remove('opacity-100');
+            });
+
+            if (els.timerDisplay) {
+                els.timerDisplay.classList.remove('hidden');
+            }
+
+            // [FIX-ANIM3] 青蛙用过渡动画滑回初始位置，滑到后再清零金额
+            // 先恢复过渡，再移动
+            els.frogContainer.style.transition = 'top 0.6s cubic-bezier(0.4,0,0.2,1), left 0.6s cubic-bezier(0.4,0,0.2,1)';
+            resetFrogPosition();
+
+            // 等过渡动画完成（600ms）再清零金额、进入 BETTING 并启动新一局倒计时
+            resetGameRoundTimer = setTimeout(() => {
+                STATE.foodBets = [0, 0, 0, 0, 0, 0, 0, 0];
+                CONFIG.foods.forEach((_, idx) => {
+                    const betEl = document.getElementById(`bet-${idx}`);
+                    if (betEl) betEl.innerText = '0';
+                });
+                renderFoods();
+
+                const roundStart = pendingRoundStartData;
+                if (roundStart) {
+                    setClientPhase('BETTING');
+                    STATE.timeLeft = roundStart.initialTimeLeft;
+                    updateCountdownDisplay(roundStart.initialTimeLeft, 'BETTING');
+
+                    _lastFetchRoundBetsTime = 0;
+                    _fetchRoundBetsCache = null;
+                    fetchRoundBets().then(bets => {
+                        if (bets && bets.foodBets) {
+                            STATE.foodBets = bets.foodBets;
+                            bets.foodBets.forEach((amount, idx) => {
+                                const el = document.getElementById(`bet-${idx}`);
+                                if (el) el.innerText = formatNumber(amount);
+                            });
+                        }
+                    }).catch(() => {});
+
+                    pendingRoundStartData = null;
+                } else {
+                    setClientPhase('IDLE');
+                    _stopCountdown();
+                    const timerDisplay = document.getElementById('timer-display');
+                    if (timerDisplay) timerDisplay.innerText = '-';
+                }
+
+                updateUI();
+                els.statusText.innerText = '请选择食物并投喂';
+                isResettingGameRound = false;
+                isProcessingSettlement = false;
+            }, 650);
+        }
+
+        // 新的异步 placeBet 函数（替代原来的同步版本）
+        // 每局累计最大投喂: 3000000 (300万)
+        const MAX_BET_PER_ROUND = 3000000;
+        
+        function placeBet() {
+            if (STATE.selectedFoodIndex === -1) {
+                showToast('请先选择食物', 'error');
+                return;
+            }
+
+            // [FIX-BET-LOCK] 硬检查：非 BETTING 状态一律拒绝，防止倒计时归零后抢投
+            if (STATE.gameState !== 'BETTING') {
+                showToast('投喂时间已结束，请等待下一局', 'warning');
+                return;
+            }
+            // [FIX-BET-LOCK] 倒计时已归零时也拒绝（本地时间比服务器快时的兜底）
+
+            // [FIX-COOLDOWN] 投喂按钮 1 秒冷却，防止重复点击/抖动连发
+            const nowTs = Date.now();
+            if (nowTs - (STATE.lastFeedClickAt || 0) < 1000) {
+                showToast('操作过快，请 1 秒后再试', 'warning');
+                return;
+            }
+            STATE.lastFeedClickAt = nowTs;
+            
+            // 获取投喂金额：优先使用固定按钮选中的金额，否则使用自定义输入
+            let amount = 0;
+            
+            // 检查是否有固定按钮被选中（通过检查按钮样式）
+            let hasSelectedBtn = false;
+            els.betBtns.forEach(btn => {
+                if (btn.classList.contains('bg-cyan-600')) {
+                    hasSelectedBtn = true;
+                }
+            });
+            
+            if (hasSelectedBtn && STATE.selectedBet > 0) {
+                // 使用固定按钮选中的金额
+                amount = STATE.selectedBet;
+            } else if (els.customBetInput && els.customBetInput.value) {
+                // 使用自定义输入的金额
+                const customAmount = parseInt(els.customBetInput.value);
+                if (!isNaN(customAmount) && customAmount > 0) {
+                    amount = customAmount;
+                }
+            }
+            
+            // 检查每局累计投喂是否超过限制
+            const currentRoundBet = STATE.userBetsOnFood.reduce((sum, b) => sum + b, 0);
+            if (currentRoundBet + amount > MAX_BET_PER_ROUND) {
+                const remaining = MAX_BET_PER_ROUND - currentRoundBet;
+                if (remaining <= 0) {
+                    showToast(`本局已达最大投喂上限 ${formatNumber(MAX_BET_PER_ROUND)} OEOE`, 'error');
+                    return;
+                }
+                showToast(`本局还可投喂 ${formatNumber(remaining)} OEOE（每局上限 ${formatNumber(MAX_BET_PER_ROUND)} OEOE）`, 'warning');
+                // 自动调整为剩余可投喂金额
+                amount = remaining;
+            }
+            
+            if (amount <= 0) {
+                showToast('请选择投喂金额', 'error');
+                return;
+            }
+            
+            if (STATE.balance < amount) {
+                showToast('余额不足', 'error');
+                return;
+            }
+
+            const foodIndex = STATE.selectedFoodIndex;
+
+            // 前端乐观更新余额（UI显示），实际扣除在服务器 /api/bet 中完成
+            STATE.balance -= amount;
+            document.getElementById('balance-display').innerText = formatNumber(STATE.balance);
+            
+            STATE.foodBets[foodIndex] += amount;
+            STATE.userBetsOnFood[foodIndex] += amount;
+            STATE.totalUserInvested += amount;
+            
+            // 保存最后投喂信息（用于结算时恢复）
+            lastBetInfo = {
+                roundId: serverRoundId,
+                foodIndex: foodIndex,
+                amount: amount
+            };
+            console.log('💾 保存投喂信息:', lastBetInfo);
+
+            SFX.bet();
+            
+            const foodEl = document.getElementById(`food-${foodIndex}`);
+            foodEl.classList.add('scale-110');
+            setTimeout(() => foodEl.classList.remove('scale-110'), 100);
+
+            // 显示"冻结"的投注金额
+            updateUI();
+
+            // 发送到服务器（不阻塞UI）
+            submitBetToServer(foodIndex, amount).then(result => {
+                // 只检查 HTTP 状态码，不依赖响应体的 success 字段
+                // 因为服务器返回 200 时可能响应体格式不同
+                if (!result || result.error) {
+                    // 真正失败 — 服务器返回错误说明 /api/bet 中已在扣款前拦截，余额未变
+                    const errorMsg = result?.error || '投喂失败';
+                    showToast(errorMsg, 'error');
+                    // [FIX-Y] 只回滚本地 UI，不再调 update-balance
+                    // 服务器在 /api/bet 中 400 return 前未执行扣款，无需通知服务器回滚
+                    STATE.foodBets[foodIndex] -= amount;
+                    STATE.userBetsOnFood[foodIndex] -= amount;
+                    STATE.balance += amount;
+                    document.getElementById('balance-display').innerText = formatNumber(STATE.balance);
+                    updateUI();
+                } else {
+                    // 成功
+                    STATE.hasBetInCurrentRound = true;
+                    showToast('投喂成功！', 'success');
+                    
+                    // [FIX-BAL2] 投喂成功后延迟同步服务端真实余额
+                    // 防止 balance-updated WebSocket 推送丢失导致余额不更新
+                    setTimeout(async () => {
+                        try { await updateWalletBalances(); } catch(e) {}
+                    }, 1500);
+                }
+            }).catch(error => {
+                console.error('投喂错误:', error);
+                // [FIX-O] 网络异常时，服务器可能已扣款成功但客户端未收到响应
+                // 不应调用 update-balance 回滚（可能重复加钱），只回滚本地UI并提示刷新
+                showToast('投喂请求异常，请刷新页面确认余额', 'error');
+                STATE.foodBets[foodIndex] -= amount;
+                STATE.userBetsOnFood[foodIndex] -= amount;
+                STATE.balance += amount;
+                document.getElementById('balance-display').innerText = formatNumber(STATE.balance);
+                // [FIX-O] 不再调用 update-balance，而是延迟从服务器重新拉取真实余额
+                setTimeout(async () => {
+                    try { await updateWalletBalances(); } catch(e) {}
+                }, 2000);
+                updateUI();
+            });
+
+            // 启动服务器轮询（避免重复启动）
+            if (!serverPollingTimer) {
+                startServerPolling();
+            }
+        };
+        
+        // 绑定到 window 以便从包装函数访问
+        window.placeBet = placeBet;
+
+        // frogFollowPath 函数已在上文定义
+
+        // resetGameRound 函数已在上文定义
+
+        // 更新余额显示（从服务器获取）- 统一使用 updateWalletBalances
+        // 注意：此函数已废弃，请使用 updateWalletBalances
+        async function updateBalanceDisplay() {
+            console.log('⚠️ updateBalanceDisplay 已废弃，使用 updateWalletBalances');
+            await updateWalletBalances();
+        }
+
+        // 从服务器同步余额（确保显示正确）- 统一使用 updateWalletBalances
+        async function syncBalanceFromServer() {
+            console.log('⚠️ syncBalanceFromServer 已废弃，使用 updateWalletBalances');
+            await updateWalletBalances();
+        }
+
+        // [已删除] processResult() - 旧版本地结算函数，现使用服务器结算
+        // [已删除] getDamageReduction() - 已移至服务器端计算
+
+        // 注意：resetGameRound 函数已在上方定义，此处已合并
+
+        // 新增：带投喂信息的历史记录函数（结算前保存投喂信息）
+        // [FIX-DUP] 增加 roundId 参数，按 roundId 去重防止同一轮次写两条记录
+        function addToHistoryWithBet(eatenIndex, userBetFoodIndex, userBetAmount, isWin, amount, totalPool = 0, roundId = 0) {
+            // 去重：如果该 roundId 已存在记录，先移除旧的再写新的
+            if (roundId > 0) {
+                STATE.history = STATE.history.filter(h => h.roundId !== roundId);
+            }
+            
+            const record = {
+                time: new Date().toLocaleTimeString(),
+                eatenFood: CONFIG.foods[eatenIndex]?.name || '未知',
+                eatenEmoji: CONFIG.foods[eatenIndex]?.emoji || '?',
+                userFood: userBetFoodIndex >= 0 ? CONFIG.foods[userBetFoodIndex]?.name : '-',
+                userEmoji: userBetFoodIndex >= 0 ? CONFIG.foods[userBetFoodIndex]?.emoji : '',
+                userBetAmount: userBetAmount || 0,
+                totalPool: totalPool || 0,  // 被吃食物的总额
+                isWin: isWin || false,
+                amount: amount || 0,  // 正数表示赢了，负数表示输了
+                roundId: roundId      // [FIX-DUP] 记录轮次ID用于去重
+            };
+            STATE.history.unshift(record);
+            if (STATE.history.length > 20) STATE.history.pop();
+            
+            // 同步到服务器
+            syncHistoryToServer(record);
+            
+            console.log('📝 历史记录已添加:', record);
+        }
+        
+        function addToHistory(eatenIndex, isWin, amount, totalPool = 0) {
+            // Find which food the user bet on
+            let userBetFoodIndex = -1;
+            let userBetAmount = 0;
+            STATE.userBetsOnFood.forEach((bet, idx) => {
+                if (bet > 0) {
+                    userBetFoodIndex = idx;
+                    userBetAmount = bet;
+                }
+            });
+            
+            // 委托给新函数，传递 totalPool
+            addToHistoryWithBet(eatenIndex, userBetFoodIndex, userBetAmount, isWin, amount, totalPool);
+        }
+        
+        // 同步历史记录到服务器
+        async function syncHistoryToServer(record) {
+            if (!STATE.userAddress) return;
+            try {
+                await fetch(`${SERVER_URL}/api/history`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        player: STATE.userAddress,
+                        record: record,
+                        roundId: record.roundId || serverRoundId,
+                        token: SessionStore.get()  // [SEC] 携带 session token
+                    })
+                });
+            } catch (e) {
+                console.error('同步历史记录失败:', e);
+            }
+        }
+        
+        // 同步排行榜到服务器
+        async function syncLeaderboardToServer(address, betAmount, profit) {
+            if (!address) return;
+            try {
+                await fetch(`${SERVER_URL}/api/leaderboard`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        player: address,
+                        betAmount: betAmount,
+                        profit: profit,
+                        token: SessionStore.get()  // [SEC] 携带 session token
+                    })
+                });
+            } catch (e) {
+                console.error('同步排行榜失败:', e);
+            }
+        }
+        
+        // 从服务器获取排行榜
+        async function fetchLeaderboardFromServer() {
+            try {
+                const res = await fetch(`${SERVER_URL}/api/leaderboard`);
+                return await res.json();
+            } catch (e) {
+                console.error('获取排行榜失败:', e);
+                return null;
+            }
+        }
+
+        function renderHistory() {
+            if (STATE.history.length === 0) {
+                document.getElementById('no-history').classList.remove('hidden');
+                els.historyList.innerHTML = '';
+                return;
+            }
+            document.getElementById('no-history').classList.add('hidden');
+            
+            // 只显示最近20条记录
+            const recentHistory = STATE.history.slice(0, 20);
+            
+            els.historyList.innerHTML = recentHistory.map(h => {
+                // 确保 amount 有默认值
+                const amount = h.amount || 0;
+                // 根据金额决定颜色和符号
+                let colorClass = 'text-slate-400';
+                let prefix = '';
+                if (amount > 0) {
+                    colorClass = 'text-green-400';
+                    prefix = '+';
+                } else if (amount < 0) {
+                    colorClass = 'text-red-400';
+                    prefix = '-';  // 输家显示负号
+                }
+                
+                // 格式化显示：时间 | 被吃(emoji+总额) | 你投(emoji+金额) | 变化
+                const time = h.time || '-';
+                const eatenFood = escapeHtml(h.eatenEmoji || '?');
+                const userFood = escapeHtml(h.userEmoji || '-');
+                
+                // 被吃总额（从数据中获取，如果没有则显示"被吃食物"的总投注额）
+                // 优先使用 h.totalPool，其次使用 h.totalPool 如果存在
+                let totalPool = h.totalPool || 0;
+                
+                // 如果 totalPool 为 0，尝试从服务器获取被吃食物的总额
+                // 这里只是显示为 0，实际上应该由服务器在结算时传入
+                
+                // 你投金额
+                const betAmount = h.userBetAmount || 0;
+                const betAmountStr = betAmount > 0 ? formatNumber(betAmount) : '-';
+                
+                // 变化（净收益）
+                const amountStr = formatNumber(Math.floor(Math.abs(amount)));
+                
+                // 修复：显示被吃的总金额（如果有的话）
+                const eatenDisplay = totalPool > 0 
+                    ? `<span class="text-red-400 font-mono text-sm">${formatNumber(totalPool)}</span>`
+                    : '<span class="text-slate-500 font-mono text-sm">0</span>';
+                
+                return `
+                <tr class="border-b border-slate-700/50">
+                    <td class="py-2 text-slate-400 text-xs">${time}</td>
+                    <td class="py-2 text-left">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">${eatenFood}</span>
+                            ${eatenDisplay}
+                        </div>
+                    </td>
+                    <td class="py-2 text-left">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">${userFood}</span>
+                            <span class="text-yellow-400 font-mono text-sm">${betAmountStr}</span>
+                        </div>
+                    </td>
+                    <td class="py-2 text-right">
+                        <span class="font-bold ${colorClass} font-mono text-sm">${prefix}${amountStr}</span>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        let currentLeaderboardType = 'current'; // 'current' 或 'last'
+
+        async function renderLeaderboard() {
+            const rankList = document.getElementById('rank-list');
+            const periodInfo = document.getElementById('rank-period-info');
+            
+            // 根据类型选择 API
+            const apiUrl = currentLeaderboardType === 'current' 
+                ? `${SERVER_URL}/api/weekly-leaderboard`
+                : `${SERVER_URL}/api/last-week-leaderboard`;
+            
+            // 从服务器获取排行榜
+            const data = await fetch(apiUrl).then(r => r.json()).catch(() => null);
+            const leaderboard = data?.leaderboard || [];
+            
+            // 更新期间信息
+            if (currentLeaderboardType === 'current') {
+                periodInfo.textContent = '今日投喂排名（实时更新）';
+            } else {
+                periodInfo.textContent = '昨日投喂排名（周一0点快照）';
+            }
+            
+            if (leaderboard.length === 0) {
+                rankList.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-500">暂无数据</td></tr>';
+                return;
+            }
+
+            rankList.innerHTML = leaderboard.map((p, i) => {
+                // 减伤逻辑：仅昨日排行榜显示（基于排名）
+                let reduction = '-';
+                if (currentLeaderboardType === 'last') {
+                    if (i === 0) reduction = '10%';
+                    else if (i >= 1 && i <= 4) reduction = '5%';
+                    else if (i >= 5 && i <= 9) reduction = '3%';
+                }
+                
+                const isUser = p.address?.toLowerCase() === STATE.userAddress?.toLowerCase();
+                const shortAddress = p.address ? 
+                    `${escapeHtml(p.address.substring(0, 6))}...${escapeHtml(p.address.substring(p.address.length - 4))}` : '';
+
+                // 获取投喂金额（兼容今日和昨日的字段名）
+                const invested = p.weekly_invested || p.hourly_invested || p.totalInvested || 0;
+
+                return `
+                <tr class="border-b border-slate-700/50 ${isUser ? 'bg-slate-700/30' : ''}">
+                    <td class="py-3 font-bold ${i < 3 ? 'text-yellow-400' : 'text-slate-400'}">#${i + 1}</td>
+                    <td class="py-3">
+                        <div class="font-bold ${isUser ? 'text-cyan-400' : 'text-white'}" title="${escapeHtml(p.address || '')}">${shortAddress}</div>
+                    </td>
+                    <td class="py-3 text-right font-tech text-yellow-400">${formatNumber(invested)}</td>
+                    <td class="py-3 text-right text-xs ${reduction !== '-' ? 'text-purple-400' : 'text-slate-500'}">${reduction}</td>
+                </tr>
+                `;
+            }).join('');
+        }
+        
+        // 切换排行榜类型
+        function setupLeaderboardToggle() {
+            const btnCurrent = document.getElementById('btn-current-week');
+            const btnLast = document.getElementById('btn-last-week');
+            
+            btnCurrent.addEventListener('click', () => {
+                currentLeaderboardType = 'current';
+                btnCurrent.className = 'flex-1 py-2 px-4 rounded-lg bg-cyan-600 text-white font-bold text-sm transition hover:bg-cyan-500';
+                btnLast.className = 'flex-1 py-2 px-4 rounded-lg bg-slate-700 text-slate-400 font-bold text-sm transition hover:bg-slate-600';
+                renderLeaderboard();
+            });
+            
+            btnLast.addEventListener('click', () => {
+                currentLeaderboardType = 'last';
+                btnLast.className = 'flex-1 py-2 px-4 rounded-lg bg-cyan-600 text-white font-bold text-sm transition hover:bg-cyan-500';
+                btnCurrent.className = 'flex-1 py-2 px-4 rounded-lg bg-slate-700 text-slate-400 font-bold text-sm transition hover:bg-slate-600';
+                renderLeaderboard();
+            });
+        }
+        
+        // 获取玩家减伤比例
+        function getDamageReduction() {
+            // 这里需要从服务器获取玩家昨日排名
+            // 暂时返回0，实际应该查询服务器
+            return 0;
+        }
+        
+        // 获取玩家减伤比例（基于昨日排行榜排名）
+        async function getPlayerDamageReduction() {
+            if (!STATE.userAddress) return 0;
+            try {
+                const res = await fetch(`${SERVER_URL}/api/player-rank/${STATE.userAddress}`);
+                const data = await res.json();
+                // 使用昨日排名计算减伤
+                if (data.lastWeekRank !== undefined) {
+                    if (data.lastWeekRank === 0) return 0.10;      // 第1名 10%减伤
+                    if (data.lastWeekRank >= 1 && data.lastWeekRank <= 4) return 0.05;  // 2-5名 5%减伤
+                    if (data.lastWeekRank >= 5 && data.lastWeekRank <= 9) return 0.03;  // 6-10名 3%减伤
+                }
+            } catch (e) {
+                console.error('获取排名失败:', e);
+            }
+            return 0;
+        }
+
+        function triggerConfetti() {
+            // 第一波：从中间爆发
+            const count = 200;
+            const defaults = { origin: { y: 0.65 } };
+
+            function fire(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, {
+                    particleCount: Math.floor(count * particleRatio)
+                }));
+            }
+
+            fire(0.25, { spread: 26, startVelocity: 55 });
+            fire(0.2, { spread: 60 });
+            fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+            fire(0.1, { spread: 120, startVelocity: 45 });
+            
+            // 第二波：两侧发射（0.5秒后）
+            setTimeout(() => {
+                confetti({ particleCount: 60, angle: 60, spread: 55, origin: { x: 0, y: 0.7 }, colors: ['#22c55e', '#a855f7', '#f59e0b'] });
+                confetti({ particleCount: 60, angle: 120, spread: 55, origin: { x: 1, y: 0.7 }, colors: ['#06b6d4', '#f472b6', '#22c55e'] });
+            }, 500);
+            
+            // 第三波：顶部洒落（1秒后）
+            setTimeout(() => {
+                confetti({ particleCount: 80, startVelocity: 20, spread: 200, origin: { y: 0.1 }, gravity: 0.8, scalar: 1.1 });
+            }, 900);
+        }
+
+        // Run
+        init().catch(err => console.error('初始化失败:', err));
+
+        // ========== 真实钱包集成 ==========
+        const ERC20_ABI = [
+            "function approve(address spender, uint256 amount) returns (bool)",
+            "function allowance(address owner, address spender) view returns (uint256)",
+            "function balanceOf(address account) view returns (uint256)",
+            "function decimals() view returns (uint8)"
+        ];
+        const GAME_ABI = [
+            "function deposit(uint256 amount)",
+            "function withdraw(uint256 amount)",
+            "function playerBalances(address) view returns (uint256)"
+        ];
+        
+        // 从 GAME_CONFIG 加载（必须已加载 config.js）
+        const CONFIG_ADDR = window.GAME_CONFIG ? {
+            game: window.GAME_CONFIG.contracts.game,
+            token: window.GAME_CONFIG.contracts.token,
+            chainId: window.GAME_CONFIG.chain.chainId,
+            chainName: window.GAME_CONFIG.chain.chainName,
+            rpcUrl: window.GAME_CONFIG.chain.rpcUrl
+        } : (() => {
+            console.error('❌ GAME_CONFIG 未加载，请确保 config.js 已正确引入');
+            throw new Error('GAME_CONFIG not loaded');
+        })();
+
+        let walletProvider = null;
+        let walletSigner = null;
+        let tokenContract = null;
+        let gameContract = null;
+
+        function detectWallet() {
+            if (window.okxwallet) return window.okxwallet;
+            if (window.ethereum) return window.ethereum;
+            return null;
+        }
+
+        async function connectRealWallet() {
+            const wallet = detectWallet();
+            if (!wallet) {
+                showToast('请安装 MetaMask 或 OKX Wallet', 'error');
+                return;
+            }
+
+            // 确保配置已加载
+            if (!CONFIG_ADDR.token || !CONFIG_ADDR.game) {
+                console.log('配置未加载，正在加载...');
+                if (typeof loadServerConfig === 'function') {
+                    try {
+                        await loadServerConfig();
+                    } catch (e) {
+                        console.error('加载配置失败:', e);
+                    }
+                }
+                // 再次检查
+                if (!CONFIG_ADDR.token || !CONFIG_ADDR.game) {
+                    showToast('配置加载失败，请刷新页面重试', 'error');
+                    console.error('合约地址为空:', CONFIG_ADDR);
+                    return;
+                }
+            }
+
+            els.walletBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 连接中...';
+
+            // 等待 ethers 加载（最多等待5秒）
+            let retryCount = 0;
+            while (typeof ethers === 'undefined' && retryCount < 10) {
+                console.log(`等待 Ethers.js 加载... (${retryCount + 1}/10)`);
+                await new Promise(r => setTimeout(r, 500));
+                retryCount++;
+            }
+            
+            if (typeof ethers === 'undefined') {
+                console.error('Ethers.js 加载超时');
+                showToast('库加载失败，请刷新页面重试', 'error');
+                els.walletBtn.innerHTML = '<i class="fa-solid fa-wallet"></i> 连接钱包';
+                return;
+            }
+
+            try {
+                walletProvider = new ethers.BrowserProvider(wallet);
+                await walletProvider.send("eth_requestAccounts", []);
+                walletSigner = await walletProvider.getSigner();
+
+                const address = await walletSigner.getAddress();
+
+                // 初始化合约
+                tokenContract = new ethers.Contract(CONFIG_ADDR.token, ERC20_ABI, walletSigner);
+                gameContract = new ethers.Contract(CONFIG_ADDR.game, GAME_ABI, walletSigner);
+
+                // 获取代币精度
+                try {
+                    CONFIG.tokenDecimals = Number(await tokenContract.decimals());
+                    console.log('代币精度:', CONFIG.tokenDecimals);
+                } catch (e) {
+                    console.error('获取精度失败，使用默认值 9');
+                    CONFIG.tokenDecimals = 9;
+                }
+
+                // 暴露到 window 对象供其他函数使用
+                window.tokenContract = tokenContract;
+                window.gameContract = gameContract;
+
+                // 切换网络
+                const chainIdHex = '0x' + CONFIG_ADDR.chainId.toString(16);
+                try {
+                    await wallet.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: chainIdHex }] });
+                } catch (e) {
+                    if (e.code === 4902) {
+                        await wallet.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: chainIdHex,
+                                chainName: CONFIG_ADDR.chainName,
+                                rpcUrls: [CONFIG_ADDR.rpcUrl],
+                                nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 },
+                                blockExplorerUrls: ['https://www.oklink.com/xlayer']
+                            }]
+                        });
+                    }
+                }
+
+                // 更新状态
+                STATE.walletConnected = true;
+                STATE.userAddress = address;
+                STATE.realWallet = true;
+
+                // ========== 单终端登录检查 ==========
+                // [SEC-08] 登录签名：用钱包签名证明地址所有权
+                let loginSignature = null;
+                let loginTimestamp = null;
+                try {
+                    loginTimestamp = Date.now().toString();
+                    const loginMessage = `FrogGame Login: ${address.toLowerCase()}:${loginTimestamp}`;
+                    const ethProvider = new ethers.BrowserProvider(wallet);
+                    const signer = await ethProvider.getSigner();
+                    loginSignature = await signer.signMessage(loginMessage);
+                } catch (sigErr) {
+                    console.error('[LOGIN] 签名失败:', sigErr);
+                    showToast('登录签名被拒绝', 'error');
+                    STATE.walletConnected = false;
+                    STATE.userAddress = null;
+                    return;
+                }
+                
+                // [FIX-429] check-online + login 合并为顺序执行，避免与后续请求并发
+                let sessionToken = null;
+                try {
+                    const checkRes = await fetch(`${SERVER_URL}/api/check-online/${address}`);
+                    const checkData = await checkRes.json();
+                    
+                    const loginBody = { 
+                        player: address, 
+                        signature: loginSignature, 
+                        timestamp: loginTimestamp 
+                    };
+                    
+                    if (checkData.online) {
+                        // 已有在线会话，创建新会话（自动踢掉旧的）
+                        const loginRes = await fetch(`${SERVER_URL}/api/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(loginBody)
+                        });
+                        const loginData = await loginRes.json();
+                        if (!loginRes.ok) {
+                            throw new Error(loginData.error || '登录失败');
+                        }
+                        sessionToken = loginData.token;
+                        if (loginData.kicked) {
+                            showToast('您的账号在其他设备登录，已踢掉该设备', 'warning');
+                        }
+                        // [FIX-BAL] login 响应里直接包含链上同步后的余额，立即显示
+                        if (loginData.balance != null) {
+                            STATE.balance = Math.floor(Number(loginData.balance));
+                            document.getElementById('balance-display').innerText = formatNumber(STATE.balance);
+                            const wa = document.getElementById('withdraw-avail');
+                            if (wa) wa.innerText = formatNumber(STATE.balance);
+                        }
+                    } else {
+                        const loginRes = await fetch(`${SERVER_URL}/api/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(loginBody)
+                        });
+                        const loginData = await loginRes.json();
+                        if (!loginRes.ok) {
+                            throw new Error(loginData.error || '登录失败');
+                        }
+                        sessionToken = loginData.token;
+                        // [FIX-BAL] login 响应里直接包含链上同步后的余额，立即显示
+                        if (loginData.balance != null) {
+                            STATE.balance = Math.floor(Number(loginData.balance));
+                            document.getElementById('balance-display').innerText = formatNumber(STATE.balance);
+                            const wa = document.getElementById('withdraw-avail');
+                            if (wa) wa.innerText = formatNumber(STATE.balance);
+                        }
+                    }
+                    console.log('✅ 登录成功, token:', sessionToken ? '已获取' : '无', '余额:', STATE.balance, 'OEOE');
+                    
+                    // [FIX-G] 保存 sessionToken 供 WebSocket 重连时使用
+                    SessionStore.set(sessionToken);
+                    
+                    // 如果 WebSocket 已连接，发送登录消息注册连接（附带 token 供服务器验证身份）
+                    if (ws && ws.readyState === 1 && sessionToken) {
+                        ws.send(JSON.stringify({
+                            type: 'login',
+                            address: address,
+                            token: sessionToken
+                        }));
+                    }
+                } catch (err) {
+                    console.error('登录检查失败:', err);
+                }
+
+                // 登录后无需额外等待，余额已从 login 响应直接获取（链上真实值）
+                // [FIX-BAL-DEDUP] login API 已返回链上余额并写入 DB，此处兜底仅在 loginData.balance 缺失时触发
+                if (STATE.balance === 0) {
+                    await updateWalletBalances().catch(e => console.warn('[BALANCE] 余额获取失败:', e.message));
+                }
+                // [FIX-BAL-DEDUP] 移除冗余的第二次 sync-balance 调用
+                // login 已查链上并写 DB，再次调用 sync-balance 是重复操作，增加 RPC 请求风险
+
+                // 更新UI
+                els.walletBtn.classList.add('hidden');
+                els.walletSection.classList.remove('hidden');
+                // wallet-section 原本就有 flex-col，只需要移除 hidden 即可显示
+
+                // [FIX-429] 间隔200ms再加载历史，错开 sync-balance
+                await new Promise(r => setTimeout(r, 200));
+                // 从服务器加载历史记录
+                await loadHistoryFromServer(address);
+
+                showToast('钱包连接成功！', 'success');
+                els.statusText.innerText = '请选择食物并投喂';
+
+                // 启动服务器状态同步（若已启动则跳过）
+                startServerPolling();
+                
+                // [FIX-429] 移除末尾重复的 updateWalletBalances() 调用（已在上方执行过）
+
+                // 不要在这里调用 updateBalanceDisplay，避免重复更新
+
+                // 监听账户变化（添加防抖，避免交易时误触发）
+                let accountChangeTimeout;
+                wallet.on('accountsChanged', (accounts) => {
+                    if (accounts.length === 0) {
+                        // 用户主动断开钱包
+                        console.log('钱包已断开');
+                        disconnectWallet();
+                    } else if (accounts[0].toLowerCase() !== STATE.userAddress.toLowerCase()) {
+                        // 用户切换了账户
+                        console.log('账户已切换:', accounts[0]);
+                        window.location.reload();
+                    }
+                });
+                
+                wallet.on('chainChanged', (chainId) => {
+                    console.log('网络切换:', chainId);
+                    if (chainId !== '0x' + CONFIG_ADDR.chainId.toString(16)) {
+                        window.location.reload();
+                    }
+                });
+
+            } catch (error) {
+                console.error('连接钱包失败:', error);
+                showToast('连接失败: ' + error.message, 'error');
+                els.walletBtn.innerHTML = '<i class="fa-solid fa-wallet"></i> 连接钱包';
+            }
+        }
+
+        async function updateWalletBalances() {
+            if (!walletSigner || !STATE.userAddress) return;
+            try {
+                const address = STATE.userAddress;
+                
+                // ========== 修复: 优先从服务器获取余额（游戏中使用服务器余额）==========
+                const serverRes = await fetch(`${SERVER_URL}/api/player-balance/${address}`);
+                // [FIX-BAL4] API 失败时不更新余额，避免 500/网络错误时余额被清零
+                if (!serverRes.ok) {
+                    console.warn('[BALANCE] API 返回错误:', serverRes.status, '保留当前余额');
+                    return;
+                }
+                const serverData = await serverRes.json();
+                // [FIX-BAL4] balance 字段缺失时不更新（防御性检查）
+                if (serverData.balance == null) {
+                    console.warn('[BALANCE] API 返回数据缺少 balance 字段:', serverData);
+                    return;
+                }
+                
+                // 服务器返回 Wei 单位，转换为 OEOE 显示
+                const serverBalanceWei = BigInt(serverData.balance);
+                const serverBalanceOEOE = parseFloat(ethers.formatUnits(serverBalanceWei, CONFIG.tokenDecimals));
+                
+                // 游戏中使用服务器余额
+                STATE.balance = Math.floor(serverBalanceOEOE);
+                document.getElementById('balance-display').innerText = formatNumber(STATE.balance);
+                // [FIX-BAL] 同步更新提取弹窗的可用余额显示
+                const withdrawAvailEl = document.getElementById('withdraw-avail');
+                if (withdrawAvailEl) withdrawAvailEl.innerText = formatNumber(STATE.balance);
+                
+                console.log('[BALANCE] 服务器余额:', STATE.balance, 'OEOE (', serverBalanceWei.toString(), 'Wei)');
+                
+            } catch (e) { 
+                console.error('[BALANCE_UPDATE_ERROR] 更新余额失败:', e); 
+            }
+        }
+
+        // 食物名称到 emoji 的映射
+        const FOOD_EMOJI_MAP = {
+            '苹果': '🍎',
+            '香蕉': '🍌',
+            '蛋糕': '🍰',
+            '糖果': '🍬',
+            '鸡腿': '🍗',
+            '鱼': '🐟',
+            '虾': '🦐',
+            '螃蟹': '🦀'
+        };
+
+        // 从服务器加载历史记录
+        async function loadHistoryFromServer(address) {
+            if (!address) return;
+            try {
+                const res = await fetch(`${SERVER_URL}/api/history/${address}`);
+                const data = await res.json();
+                if (data.history && Array.isArray(data.history)) {
+                    STATE.history = data.history.map(h => {
+                        // [FIX-EMOJI] 优先使用数据库存储的 emoji，其次用名称映射，最后才用 '?'
+                        const eatenEmoji = h.eatenEmoji || FOOD_EMOJI_MAP[h.eatenFood] || '?';
+                        const userEmoji = (h.userFood && h.userFood !== '-') 
+                            ? (h.userEmoji || FOOD_EMOJI_MAP[h.userFood] || '') 
+                            : '';
+                        
+                        return {
+                            time: h.time || '-',
+                            eatenFood: h.eatenFood || '未知',
+                            eatenEmoji: eatenEmoji,
+                            userFood: h.userFood || '-',
+                            userEmoji: userEmoji,
+                            userBetAmount: h.userBetAmount || h.bet_amount || 0,
+                            isWin: h.isWin || false,
+                            amount: h.amount != null ? h.amount : (h.profit || 0),
+                            totalPool: h.totalPool || 0,
+                            roundId: h.roundId || 0
+                        };
+                    });
+                    console.log(`✅ 加载历史记录: ${STATE.history.length} 条`);
+                    renderHistory();
+                }
+            } catch (e) {
+                console.error('加载历史记录失败:', e);
+            }
+        }
+
+        // 覆盖原来的 connectWallet
+        window.originalConnectWallet = connectWallet;
+        connectWallet = connectRealWallet;
+        
+        // 绑定到 window 以便从包装函数访问
+        window.connectRealWallet = connectRealWallet;
+
+        // 模态框元素引用
+        const walletModal = document.getElementById('wallet-modal');
+        const depositModal = document.getElementById('deposit-modal');
+        const withdrawModal = document.getElementById('withdraw-modal');
+
+        // 点击钱包按钮打开钱包模态框
+        els.walletBtn.addEventListener('click', () => {
+            if (STATE.walletConnected) {
+                toggleModal(walletModal, true);
+                updateWalletModalInfo();
+            } else {
+                connectRealWallet();
+            }
+        });
+
+        // 更新钱包模态框信息
+        async function updateWalletModalInfo() {
+            if (!walletSigner) return;
+            const address = await walletSigner.getAddress();
+            document.getElementById('wallet-address').innerText = address.substring(0, 6) + '...' + address.substring(address.length - 4);
+            try {
+                const walletBal = await tokenContract.balanceOf(address);
+                const gameBal = await gameContract.playerBalances(address);
+                
+                // 转换余额
+                const gameBalOEOE = parseFloat(ethers.formatUnits(gameBal, CONFIG.tokenDecimals));
+                
+                document.getElementById('wallet-balance').innerText = formatNumber(Number(ethers.formatUnits(walletBal, CONFIG.tokenDecimals))) + ' OEOE';
+                document.getElementById('game-balance').innerText = formatNumber(Math.floor(gameBalOEOE)) + ' OEOE';
+            } catch (e) { console.error(e); }
+        }
+
+        // 存入按钮
+        document.getElementById('deposit-btn')?.addEventListener('click', () => {
+            toggleModal(walletModal, false);
+            toggleModal(depositModal, true);
+            updateDepositInfo();
+        });
+
+        // 提取按钮
+        document.getElementById('withdraw-btn')?.addEventListener('click', () => {
+            toggleModal(walletModal, false);
+            toggleModal(withdrawModal, true);
+            updateWithdrawInfo();
+        });
+
+        // 断开钱包功能（全局函数）
+        function disconnectWallet() {
+            // 检查是否有未结算的投喂，禁止断开钱包
+            if (STATE.hasBetInCurrentRound) {
+                showToast('本轮已投喂，无法断开钱包', 'error');
+                return;
+            }
+            
+            console.log('断开钱包被调用');
+
+            // [FIX-KICK] 断开前通知服务端清除 session，防止快速重连时误触发踢出
+            if (STATE.userAddress) {
+                fetch(`${SERVER_URL}/api/logout`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        player: STATE.userAddress,
+                        token: SessionStore.get()  // [SEC] 携带 session token
+                    })
+                }).catch(() => {});
+            }
+
+            // 清除钱包状态
+            walletProvider = null;
+            walletSigner = null;
+            tokenContract = null;
+            gameContract = null;
+            window.tokenContract = null;
+            window.gameContract = null;
+            
+            // 重置 STATE
+            STATE.walletConnected = false;
+            STATE.userAddress = null;
+            STATE.balance = 0;
+            // [FIX-HIST] 断开钱包时不清空历史记录，保留显示直到新用户连接
+            // STATE.history = [];  ← 移除：让玩家断开后仍能查看本次游戏记录
+            STATE.foodBets = [0, 0, 0, 0, 0, 0, 0, 0];
+            STATE.userBetsOnFood = [0, 0, 0, 0, 0, 0, 0, 0];
+            STATE.selectedFoodIndex = -1;
+            STATE.hasBetInCurrentRound = false;
+            
+            // [FIX-10] 重置最后投注信息和结算状态，防止重连后用旧数据错误计算盈亏
+            lastBetInfo = { roundId: -1, foodIndex: -1, amount: 0 };
+            lastSettledRound = -1;
+            isSettling = false;
+            isProcessingSettlement = false;
+            // [FIX-G] 清除 sessionToken，防止断开后 WebSocket 重连仍用旧 token
+            SessionStore.clear();
+            
+            // [FIX-KICK2] 断开钱包时主动关闭 WebSocket，避免旧连接收到 kicked-out
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                try { ws.close(); } catch (e) {}
+            }
+            
+            // 更新 UI
+            const walletBtn = document.getElementById('connect-wallet-btn');
+            const walletSection = document.getElementById('wallet-section');
+            const balanceDisplay = document.getElementById('balance-display');
+            
+            if (walletBtn) {
+                walletBtn.classList.remove('hidden');
+                walletBtn.style.display = '';
+                // 重置按钮文字
+                walletBtn.innerHTML = '<i class="fa-solid fa-wallet"></i> 连接钱包';
+            }
+            if (walletSection) {
+                walletSection.classList.add('hidden');
+                walletSection.classList.remove('flex');
+            }
+            if (balanceDisplay) {
+                balanceDisplay.innerText = '0';
+            }
+            
+            // 清除食物选择
+            document.querySelectorAll('.food-card').forEach(el => {
+                el.classList.remove('selected');
+            });
+            document.querySelectorAll('[id^="highlight-"]').forEach(el => {
+                el.classList.remove('opacity-100');
+            });
+            
+            // 关闭钱包模态框
+            const walletModal = document.getElementById('wallet-modal');
+            if (walletModal) {
+                walletModal.classList.add('hidden');
+            }
+            
+            showToast('已断开钱包', 'info');
+        }
+        
+        // 绑定到 window 以便 onclick 可以调用
+        window.disconnectWallet = disconnectWallet;
+
+        // 断开钱包（模态框内按钮）
+        document.getElementById('disconnect-wallet-btn')?.addEventListener('click', disconnectWallet);
+
+        async function updateDepositInfo() {
+            if (!walletSigner) return;
+            const address = await walletSigner.getAddress();
+            const bal = await tokenContract.balanceOf(address);
+            document.getElementById('deposit-avail').innerText = formatNumber(Number(ethers.formatUnits(bal, CONFIG.tokenDecimals)));
+        }
+
+        async function updateWithdrawInfo() {
+            if (!walletSigner || !STATE.userAddress) return;
+            try {
+                // 从服务器获取余额（服务器已计算可用余额）
+                const res = await fetch(`${SERVER_URL}/api/player-balance/${STATE.userAddress}`);
+                // [FIX-BAL4] API 失败时不更新 STATE.balance，只保持提取弹窗显示原值
+                if (!res.ok) {
+                    document.getElementById('withdraw-avail').innerText = formatNumber(STATE.balance || 0);
+                    return;
+                }
+                const data = await res.json();
+                if (data.balance == null) {
+                    document.getElementById('withdraw-avail').innerText = formatNumber(STATE.balance || 0);
+                    return;
+                }
+                
+                // [FIX-8] data.balance 是 Wei 字符串，需先转为 OEOE 再赋给 STATE.balance
+                const serverBalanceWei = BigInt(data.balance);
+                const serverBalanceOEOE = Math.floor(parseFloat(ethers.formatUnits(serverBalanceWei, CONFIG.tokenDecimals)));
+                STATE.balance = serverBalanceOEOE;
+                document.getElementById('withdraw-avail').innerText = formatNumber(STATE.balance);
+            } catch (e) {
+                console.error('获取余额失败:', e);
+                document.getElementById('withdraw-avail').innerText = formatNumber(STATE.balance || 0);
+            }
+        }
+
+        // [FIX-F02/F05] deposit-btn/withdraw-btn 正式绑定在 init() 中，此处重复绑定已删除
+
+        // 余额更新定时器（改为30秒，减少API调用）
+        // [FIX-BAL2] 移除 hasBetInCurrentRound 检查——投注后也需要定时同步余额
+        // 防止 WebSocket 推送丢失时余额长时间不更新
+        if (typeof window !== 'undefined') {
+            setInterval(() => {
+                if (STATE.walletConnected && STATE.userAddress && !isProcessingSettlement) {
+                    // [FIX-14] 从服务器 API 拉取，而非链上 playerBalances
+                    // 链上余额不含链下游戏内余额（结算前赢利），会导致显示偏低
+                    fetch(`${SERVER_URL}/api/player-balance/${STATE.userAddress}`)
+                        .then(r => {
+                            // [FIX-BAL4] API 失败时不更新余额
+                            if (!r.ok) throw new Error('API ' + r.status);
+                            return r.json();
+                        })
+                        .then(data => {
+                            // [FIX-BAL4] balance 字段缺失时不更新
+                            if (data.balance == null) return;
+                            const wei = BigInt(data.balance);
+                            const oeoe = Math.floor(parseFloat(ethers.formatUnits(wei, CONFIG.tokenDecimals)));
+                            STATE.balance = oeoe;
+                            document.getElementById('balance-display').innerText = formatNumber(STATE.balance);
+                        }).catch(e => {});
+                }
+            }, 15000);  // 15秒更新一次
+        }
+
+    </script>
+<!-- AI Strategy Panel -->
+<script>Object.defineProperty(window,"connectedAddress",{get:function(){try{return STATE.userAddress}catch(e){return null}}})</script>
+<script src="ai-panel.js"></script>
 </body>
 </html>
