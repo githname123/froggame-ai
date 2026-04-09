@@ -146,20 +146,7 @@ const AI_PANEL = (() => {
         }
         html += `</div>`;
 
-        // Recommendations
-        if (recommendations.length > 0) {
-            html += `<div class="ai-section"><div class="ai-section-title">AI 推荐</div>`;
-            for (const rec of recommendations) {
-                const icon = rec.type === 'opportunity' ? '🎯' : rec.type === 'warning' ? '⚠️' : rec.type === 'risk' ? '🔴' : '💡';
-                html += `<div class="ai-rec ai-rec-${rec.type}">${icon} ${rec.message}</div>`;
-            }
-            html += `</div>`;
-        }
-
-        // Unbetted foods
-        if (unbettedFoods && unbettedFoods.length > 0) {
-            html += `<div class="ai-highlight">🎯 无人投注: ${unbettedFoods.map(f => f.emoji).join(' ')} — 最大收益潜力！</div>`;
-        }
+        // AI 推荐和无人投注提示已移除（不向玩家暴露策略信息）
 
         return html;
     }
